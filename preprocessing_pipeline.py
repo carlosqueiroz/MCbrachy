@@ -1,0 +1,1 @@
+from preprocessing_pipeline_components.anonymization import anonymize_single_DICOM
