@@ -1,0 +1,10 @@
+certifi==2020.12.5
+chardet==4.0.0
+dicom-anonymiseur @ git+https://gitlab.physmed.chudequebec.ca/gacou54/dicom-anonymiseur.git@ef79cdc8a2b0e456a361fd6002bdd07715e8ffb1
+grpm-uid==0.1
+idna==2.10
+pydicom==2.1.2
+pyorthanc==0.2.14
+requests==2.25.1
+urllib3==1.26.5
+xlrd==2.0.1
