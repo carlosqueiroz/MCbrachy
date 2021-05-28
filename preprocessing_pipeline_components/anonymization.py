@@ -9,17 +9,17 @@ def anonymize_single_DICOM(dicom_file_path: str, anonymized_directory: str, new_
                            random_str: str = "", anonymized_study_folder: str = "study",
                            anonymized_series_folder: str = "series", anonymized_instance_number: int = 0) -> None:
     """
-    This method...
+    This method uses dicom_anonymiseur anonymization method. Simply said, it removes and replace all
+    tags included in the Attribute Confidentiality Profile (DICOM PS 3.15: Appendix E). In UID's cases,
+    the anonymization method replaces the old UID by a grpm UID.
 
-
-    :param anonymized_study_folder:
-    :param anonymized_instance_number:
-    :param anonymized_series_folder:
+    :param anonymized_study_folder: desired name for the study folder name
+    :param anonymized_instance_number: desired instance number
+    :param anonymized_series_folder: desired name for the series folder name
     :param dicom_file_path: path and name of the dicom file to anonymize.
     :param anonymized_directory: directory where anonymized DICOMs will be sent.
-    :param new_patient_id: Ne patient Id for the anonymized DICOMs
+    :param new_patient_id: New patient Id for the anonymized DICOMs (it will also be the name of the patient folder)
     :param random_str: string that will be added to the real UIDs in order to generate untraceable new UIDs
-    :return:
     """
 
     loaded_dicom = pydicom.dcmread(dicom_file_path)
@@ -46,16 +46,14 @@ def anonymize_whole_series(series_folder: str, anonymized_directory: str, new_pa
                            random_str: str = "", anonymized_study_folder: str = "study",
                            anonymized_series_folder: str = "series") -> None:
     """
-    This method...
+    This method simply iterates on all the DICOMS contained in the series folder.
 
-
-    :param series_folder:
-    :param anonymized_study_folder:
-    :param anonymized_series_folder:
+    :param anonymized_study_folder: desired name for the study folder name
+    :param anonymized_series_folder: desired name for the series folder name
+    :param series_folder: path to the target series folder
     :param anonymized_directory: directory where anonymized DICOMs will be sent.
-    :param new_patient_id: Ne patient Id for the anonymized DICOMs
-    :param random_str: string that will be added to the real UIDs in order to generate untraceable new UIDs
-    :return:
+    :param new_patient_id: New patient Id for the anonymized DICOMs (it will also be the name of the patient folder)
+    :param random_str: string that will be added to the real UIDs in order to generate untraceable new UID
     """
     i = 0
     for files in os.listdir(series_folder):
@@ -68,15 +66,13 @@ def anonymize_whole_series(series_folder: str, anonymized_directory: str, new_pa
 def anonymize_whole_study(study_folder: str, anonymized_directory: str, new_patient_id: str = 'patient',
                           random_str: str = "", anonymized_study_folder: str = "study") -> None:
     """
-    This method...
+    This method simply iterates on all series folder contained in the study
 
-
-    :param study_folder:
-    :param anonymized_study_folder:
+    :param anonymized_study_folder: desired name for the study folder name
+    :param study_folder: path to the target study folder
     :param anonymized_directory: directory where anonymized DICOMs will be sent.
-    :param new_patient_id: Ne patient Id for the anonymized DICOMs
-    :param random_str: string that will be added to the real UIDs in order to generate untraceable new UIDs
-    :return:
+    :param new_patient_id: New patient Id for the anonymized DICOMs (it will also be the name of the patient folder)
+    :param random_str: string that will be added to the real UIDs in order to generate untraceable new UID
     """
     i = 0
     for folders in os.listdir(study_folder):
@@ -89,14 +85,12 @@ def anonymize_whole_study(study_folder: str, anonymized_directory: str, new_pati
 def anonymize_whole_patient(patient_folder: str, anonymized_directory: str, new_patient_id: str = 'patient',
                             random_str: str = "") -> None:
     """
-    This method...
+    This method simply iterates on all the study folder contained in the patient folder
 
-
-    :param patient_folder:
+    :param patient_folder: path to the target study folder
     :param anonymized_directory: directory where anonymized DICOMs will be sent.
-    :param new_patient_id: Ne patient Id for the anonymized DICOMs
-    :param random_str: string that will be added to the real UIDs in order to generate untraceable new UIDs
-    :return:
+    :param new_patient_id: New patient Id for the anonymized DICOMs (it will also be the name of the patient folder)
+    :param random_str: string that will be added to the real UIDs in order to generate untraceable new UID
     """
     i = 0
     for folders in os.listdir(patient_folder):

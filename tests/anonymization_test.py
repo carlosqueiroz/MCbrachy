@@ -127,7 +127,7 @@ class TestAnonymizeWholeFolders(unittest.TestCase):
 
     def test_anonymization_whole_study(self):
         study_folder = os.path.join(data_folder, 'VS-SEG-001', "study")
-        data_path = os.path.join(study_folder, '01992',"1-1.dcm")
+        data_path = os.path.join(study_folder, '01992', "1-1.dcm")
         initial_dicom = pydicom.dcmread(data_path)
         initial_instance_uid = initial_dicom.SOPInstanceUID
         initial_series_uid = initial_dicom.SeriesInstanceUID
@@ -160,7 +160,8 @@ class TestAnonymizeWholeFolders(unittest.TestCase):
         dicom_modality = pydicom.dcmread(data_path).Modality
         self.anonymized_data_dirname = os.path.join(data_folder, "new_patient_ID")
         anonym.anonymize_whole_patient(patient_folder, data_folder, "new_patient_ID")
-        anonymized_data_path = os.path.join(data_folder, "new_patient_ID", "study0", "series0", f"{dicom_modality}0.dcm")
+        anonymized_data_path = os.path.join(data_folder, "new_patient_ID", "study0", "series0",
+                                            f"{dicom_modality}0.dcm")
         anonymized_dicom = pydicom.dcmread(anonymized_data_path)
         anonymized_instance_uid = anonymized_dicom.SOPInstanceUID
         anonymized_series_uid = anonymized_dicom.SeriesInstanceUID
@@ -177,10 +178,10 @@ class TestAnonymizeWholeFolders(unittest.TestCase):
         self.assertEqual(anonymized_series_uid, "1.2.826.0.1.3680043.10.424.7023867216555737430473303914711639611")
         self.assertEqual(anonymized_instance_uid, "1.2.826.0.1.3680043.10.424.1297314044383254387606992106650282561")
 
-
     def tearDown(self) -> None:
         if os.path.exists(self.anonymized_data_dirname):
             shutil.rmtree(self.anonymized_data_dirname)
+
 
 if __name__ == '__main__':
     unittest.main()
