@@ -1,0 +1,3 @@
+from preprocessing_pipeline_components.contour_verification import verify_if_all_required_contours_are_present
+
+verify_if_all_required_contours_are_present("E:\DICOMS\VS-SEG-001_ANON\study0\series1\RTSTRUCT0.dcm")
