@@ -1,11 +1,12 @@
 import pydicom
 import numpy as np
 import os
+import logging
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 
 
-def generate_3d_image_from_series(path_to_series_folder:str) -> np.ndarray:
+def generate_3d_image_from_series(path_to_series_folder: str) -> np.ndarray:
     """
 
     :param path_to_series_folder:
@@ -47,21 +48,45 @@ def plot_whole_series(path_to_series_folder: str):
 
 
 def manual_selection_of_calcification(path_to_series_folder):
-    pass
+    """
+
+    :param path_to_series_folder:
+    :return:
+    """
+    plot_whole_series(path_to_series_folder)
+    is_answer_valid = True
+    answer = None
+    while is_answer_valid:
+        print('Was there any prostate calcification in the image?')
+        answer = get_input("(Yes or No):")
+        if answer == "Yes" or answer == "No":
+            is_answer_valid = False
+
+    if answer == "Yes":
+        return True
+
+    if answer != "No":
+        logging.warning(f"Something unexpected occured in the manual selection for series {path_to_series_folder}."
+                        f"False is automatically returned in these cases.")
+    return False
 
 
-
-plot_whole_series(r"E:\DICOMS\oncoweb\patient4\study0\series4")
-
-
+def get_input(text):
+    return input(text)
 
 
+def is_there_prostate_calcification_in_study(path_to_study_folder: str) -> bool:
+    """
 
+    :param path_to_study_folder:
+    :return:
+    """
+    for folders in os.listdir(path_to_study_folder):
+        series_folder = os.path.join(path_to_study_folder, folders)
+        first_instance_path = os.path.join(series_folder, os.listdir(series_folder)[0])
+        if pydicom.dcmread(first_instance_path).Modality in ["CT", "MR", "RTIMAGE", "CR", "PT", "US"]:
+            presence_of_calcification = manual_selection_of_calcification(series_folder)
+            if presence_of_calcification:
+                return True
 
-
-
-
-
-
-
-
+    return False
