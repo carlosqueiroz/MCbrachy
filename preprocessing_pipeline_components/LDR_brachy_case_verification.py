@@ -54,7 +54,7 @@ def verify_if_source_corresponds_to_treatment_type(path_to_dicom: str, treatment
     try:
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
-            source_sequence = json_version_dicom["300A0210"]["Value"][0]
+            source_sequence = json_version_dicom["300A0210"]["Value"]
             for sources in source_sequence:
                 if sources["300A0226"]["Value"][0] not in source_verification[treatment_type]:
                     return False
@@ -84,17 +84,20 @@ def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocab
     patient_id = open_dicom.PatientID
     instance_uid = open_dicom.SOPInstanceUID
     try:
-        treatment_site_vocabulary_file = open(vocab_path, "r").read()
-        treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file)
+        treatment_site_vocabulary_file = open(vocab_path, "r")
+        treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
+        treatment_site_vocabulary_file.close()
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
-            dicom_treatment_site = json_version_dicom["300A000C"]["Value"][0]
+            dicom_treatment_site = json_version_dicom["300A000B"]["Value"][0]
             if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
                 return True
 
             if (dicom_treatment_site not in chain(*treatment_site_vocabulary.values())) and not disable_vocabulary_update:
-                treatment_site_vocabulary_file = open(vocab_path, "r").read()
-                treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file)
+                add_expression_to_vocab(dicom_treatment_site, treatment_site_vocabulary)
+                treatment_site_vocabulary_file = open(vocab_path, "r")
+                treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
+                treatment_site_vocabulary_file.close()
 
                 if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
                     return True
