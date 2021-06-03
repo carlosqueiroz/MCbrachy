@@ -1,14 +1,20 @@
+import os
 import pydicom
 import logging
+import json
+from root import ROOT
+from itertools import chain
+
+source_verification = {"LDR": ["I-125", "Pd-103", "Cs-131"], "HDR": ["Ir-192"]}
+
+vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "treatment_site_vocabulary.json")
 
 
-def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "LDR",
-                                    thorough_verification: bool = False) -> bool:
+def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "LDR") -> bool:
     """
 
     :param path_to_dicom:
     :param treatment_type:
-    :param thorough_verification:
     :return:
     """
 
@@ -19,11 +25,6 @@ def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "L
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
             brachy_treatment_type = json_version_dicom["300A0202"]["Value"][0]
-            if thorough_verification and brachy_treatment_type == treatment_type:
-                if source_verification():
-                    return True
-                return False
-
             if brachy_treatment_type == treatment_type:
                 return True
 
@@ -40,5 +41,107 @@ def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "L
         return False
 
 
-def source_verification():
-    return False
+def verify_if_source_corresponds_to_treatment_type(path_to_dicom: str, treatment_type: str = "LDR"):
+    """
+
+    :param path_to_dicom:
+    :param treatment_type:
+    :return:
+    """
+    open_dicom = pydicom.dcmread(path_to_dicom)
+    patient_id = open_dicom.PatientID
+    instance_uid = open_dicom.SOPInstanceUID
+    try:
+        if open_dicom.Modality == "RTPLAN":
+            json_version_dicom = open_dicom.to_json_dict()
+            source_sequence = json_version_dicom["300A0210"]["Value"][0]
+            for sources in source_sequence:
+                if sources["300A0226"]["Value"][0] not in source_verification[treatment_type]:
+                    return False
+
+            return True
+
+        logging.warning(f"Instance {instance_uid} of patient {patient_id} is not a RTPLAN as expected."
+                        f"\n The verification of brachy treatment plan automatically returned false")
+        return False
+
+    except KeyError:
+        logging.warning(f"Something went wrong while searching for brachy treatment relative information for instance"
+                        f" {instance_uid} of patient {patient_id}."
+                        f"\n The verification of brachy treatment plan automatically returned false")
+        return False
+
+
+def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocabulary_update: bool = False):
+    """
+
+    :param path_to_dicom:
+    :param treatment_site:
+    :param disable_vocabulary_update:
+    :return:
+    """
+    open_dicom = pydicom.dcmread(path_to_dicom)
+    patient_id = open_dicom.PatientID
+    instance_uid = open_dicom.SOPInstanceUID
+    try:
+        treatment_site_vocabulary_file = open(vocab_path, "r").read()
+        treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file)
+        if open_dicom.Modality == "RTPLAN":
+            json_version_dicom = open_dicom.to_json_dict()
+            dicom_treatment_site = json_version_dicom["300A000C"]["Value"][0]
+            if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
+                return True
+
+            if (dicom_treatment_site not in chain(*treatment_site_vocabulary.values())) and not disable_vocabulary_update:
+                treatment_site_vocabulary_file = open(vocab_path, "r").read()
+                treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file)
+
+                if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
+                    return True
+
+            return False
+
+        logging.warning(f"Instance {instance_uid} of patient {patient_id} is not a RTPLAN as expected."
+                        f"\n The verification of brachy treatment plan automatically returned false")
+        return False
+
+    except KeyError:
+        logging.warning(f"Something went wrong while searching for brachy treatment relative information for instance"
+                        f" {instance_uid} of patient {patient_id}."
+                        f"\n The verification of brachy treatment plan automatically returned false")
+        return False
+
+
+def get_input(text):
+    return input(text)
+
+
+def add_expression_to_vocab(dicom_treatment_site: str, treatment_site_vocabulary):
+    """
+
+    :param dicom_treatment_site:
+    :param treatment_site_vocabulary:
+    :return:
+    """
+    associated_treatment_site = get_input(f"In which treatment site category does {dicom_treatment_site}"
+                                          f"go into? (existing categories: {treatment_site_vocabulary.keys()}):")
+    if associated_treatment_site in treatment_site_vocabulary.keys():
+        treatment_site_vocabulary[associated_treatment_site].append(dicom_treatment_site)
+
+    else:
+        is_answer_not_valid = True
+        while is_answer_not_valid:
+            print(f'Do you really want to create a new category named {associated_treatment_site}')
+            answer = get_input("(Yes or No):")
+            if answer == "Yes" or answer == "No":
+                is_answer_not_valid = False
+
+            if answer == "Yes":
+                treatment_site_vocabulary[associated_treatment_site] = [dicom_treatment_site]
+
+            else:
+                logging.warning(f"The category has not been created, moving on.")
+    vocab_file = open(vocab_path, "w")
+    json.dump(treatment_site_vocabulary, vocab_file)
+    vocab_file.close()
+
