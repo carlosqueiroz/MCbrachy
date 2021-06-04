@@ -12,10 +12,14 @@ vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "treatment_
 
 def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "LDR") -> bool:
     """
+    This method verifies if the brachytherapy treatment tag
+    of the DICOM RT PLAN corresponds to the desired treatment
+    type (eg. LDR, HDR, MDR). In any unexpected cases, this method
+    will simply return False.
 
-    :param path_to_dicom:
-    :param treatment_type:
-    :return:
+    :param path_to_dicom: path to the DICOM RT PLAN file
+    :param treatment_type: HDR, LDR, MDR or PDR
+    :return: Whether or not the RT PLAN treatment plan fits the desired treatment plan
     """
 
     open_dicom = pydicom.dcmread(path_to_dicom)
@@ -43,10 +47,14 @@ def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "L
 
 def verify_if_source_corresponds_to_treatment_type(path_to_dicom: str, treatment_type: str = "LDR"):
     """
+    This method verifies if all listed sources in the DICOM RT PLAN correspond to
+    the sources used in the desired treatment type. If at least one source doesn't fit what is expected,
+    this method will return False. In any unexpected cases, this method
+    will simply return False.
 
-    :param path_to_dicom:
-    :param treatment_type:
-    :return:
+    :param path_to_dicom: path to the DICOM RT PLAN file
+    :param treatment_type: HDR, LDR, MDR or PDR
+    :return: Whether or not all the RT PLAN sources fit the desired treatment plan
     """
     open_dicom = pydicom.dcmread(path_to_dicom)
     patient_id = open_dicom.PatientID
@@ -72,13 +80,16 @@ def verify_if_source_corresponds_to_treatment_type(path_to_dicom: str, treatment
         return False
 
 
-def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocabulary_update: bool = False):
+def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocabulary_update: bool = False) -> bool:
     """
+    This method verifies if the treatement site in the DICOM RT PLAN is in the vocabulary list of desired treatment site.
+    If it is not and disable_vocabulary_update is Fasle, the user will be asked if he wants to add the new encountered
+    expression in one of the vocab category.
 
-    :param path_to_dicom:
-    :param treatment_site:
-    :param disable_vocabulary_update:
-    :return:
+    :param path_to_dicom: path to the DICOM RT PLAN file
+    :param treatment_site: treatment site string corresponding to one of the vocabulary keys
+    :param disable_vocabulary_update: disable the addition of new encountered values in dictionary
+    :return: Whether or not the treatment site in DICOM corresponds to desired treatment site
     """
     open_dicom = pydicom.dcmread(path_to_dicom)
     patient_id = open_dicom.PatientID
@@ -119,12 +130,15 @@ def get_input(text):
     return input(text)
 
 
-def add_expression_to_vocab(dicom_treatment_site: str, treatment_site_vocabulary):
+def add_expression_to_vocab(dicom_treatment_site: str, treatment_site_vocabulary: dict) -> None:
     """
+    Because many words or expression can be used to describe the same structure,
+    a dictionary has been created to keep track of the many expressions associated with the same concept.
+    (eg. prostate, Prostate, The prostate, etc). This method simply add a new expression in a certain category.
+    A category represents a single structure.
 
-    :param dicom_treatment_site:
-    :param treatment_site_vocabulary:
-    :return:
+    :param dicom_treatment_site: treatment site found in the dicom that is not in the vocabulary
+    :param treatment_site_vocabulary: dict of all the vocabulary
     """
     associated_treatment_site = get_input(f"In which treatment site category does {dicom_treatment_site}"
                                           f"go into? (existing categories: {treatment_site_vocabulary.keys()}):")
