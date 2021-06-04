@@ -53,44 +53,45 @@ class TestVerifyIfSourceCorrespondsToTreatmentType(unittest.TestCase):
         self.assertTrue(verification)
 
 
-class TestAddExpressionToVocab(unittest.TestCase):
+class TestAddExpressionToTreatmentVocab(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         test_vocab_path = os.path.join(data_folder, "test_vocab.json")
         vocab_file = open(test_vocab_path, "w")
         json.dump({}, vocab_file)
         vocab_file.close()
-        LDR_brachy_check.vocab_path = test_vocab_path
+        LDR_brachy_check.treatment_vocab_path = test_vocab_path
 
     def test_adding_category_when_empty(self):
         with patch("preprocessing_pipeline_components.LDR_brachy_case_verification.get_input", return_value='Yes'):
-            LDR_brachy_check.add_expression_to_vocab("Prostate", {})
-        treatment_site_vocabulary_file = open(LDR_brachy_check.vocab_path, "r")
+            LDR_brachy_check.add_expression_to_treatment_vocab("Prostate", {})
+        treatment_site_vocabulary_file = open(LDR_brachy_check.treatment_vocab_path, "r")
         treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
         treatment_site_vocabulary_file.close()
         self.assertEqual(treatment_site_vocabulary, {"Yes": ["Prostate"]})
         with patch("preprocessing_pipeline_components.LDR_brachy_case_verification.get_input", return_value='No'):
-            LDR_brachy_check.add_expression_to_vocab("Vessie", {})
-        treatment_site_vocabulary_file = open(LDR_brachy_check.vocab_path, "r")
+            LDR_brachy_check.add_expression_to_treatment_vocab("Vessie", {})
+        treatment_site_vocabulary_file = open(LDR_brachy_check.treatment_vocab_path, "r")
         treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
         treatment_site_vocabulary_file.close()
         self.assertEqual(treatment_site_vocabulary, {})
 
     def test_adding_category_when_not_empty(self):
         with patch("preprocessing_pipeline_components.LDR_brachy_case_verification.get_input", return_value='Yes'):
-            LDR_brachy_check.add_expression_to_vocab("Rectum", {"Prostate": ["Prostate", "prostate"],
-                                                                "Vessie": ["Vessie", "vessie"]})
+            LDR_brachy_check.add_expression_to_treatment_vocab("Rectum", {"Prostate": ["Prostate", "prostate"],
+                                                                          "Vessie": ["Vessie", "vessie"]})
 
-        treatment_site_vocabulary_file = open(LDR_brachy_check.vocab_path, "r")
+        treatment_site_vocabulary_file = open(LDR_brachy_check.treatment_vocab_path, "r")
         treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
         treatment_site_vocabulary_file.close()
         self.assertEqual(treatment_site_vocabulary, {"Prostate": ["Prostate", "prostate"],
                                                      "Vessie": ["Vessie", "vessie"], "Yes": ["Rectum"]})
 
         with patch("preprocessing_pipeline_components.LDR_brachy_case_verification.get_input", return_value='Yes'):
-            LDR_brachy_check.add_expression_to_vocab("rectum", {"Prostate": ["Prostate", "prostate"],
-                                                     "Vessie": ["Vessie", "vessie"], "Yes": ["Rectum"]})
-        treatment_site_vocabulary_file = open(LDR_brachy_check.vocab_path, "r")
+            LDR_brachy_check.add_expression_to_treatment_vocab("rectum", {"Prostate": ["Prostate", "prostate"],
+                                                                          "Vessie": ["Vessie", "vessie"],
+                                                                          "Yes": ["Rectum"]})
+        treatment_site_vocabulary_file = open(LDR_brachy_check.treatment_vocab_path, "r")
         treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
         treatment_site_vocabulary_file.close()
 
@@ -98,8 +99,8 @@ class TestAddExpressionToVocab(unittest.TestCase):
                                                      "Vessie": ["Vessie", "vessie"], "Yes": ["Rectum", "rectum"]})
 
     def tearDown(self) -> None:
-        if os.path.exists(LDR_brachy_check.vocab_path):
-            os.remove(LDR_brachy_check.vocab_path)
+        if os.path.exists(LDR_brachy_check.treatment_vocab_path):
+            os.remove(LDR_brachy_check.treatment_vocab_path)
 
 
 class TestVerifyTreatmentSite(unittest.TestCase):
@@ -118,7 +119,7 @@ class TestVerifyTreatmentSite(unittest.TestCase):
         self.assertFalse(verification)
 
     def test_treatment_site_in_vocab_and_in_specified_category(self):
-        vocab_file = open(LDR_brachy_check.vocab_path, "w")
+        vocab_file = open(LDR_brachy_check.treatment_vocab_path, "w")
         json.dump({"prostate": ["Prostate"]}, vocab_file)
         vocab_file.close()
         data_path = os.path.join(data_folder, 'HDR.dcm')
@@ -126,7 +127,7 @@ class TestVerifyTreatmentSite(unittest.TestCase):
         self.assertTrue(verification)
 
     def test_treatment_site_in_vocab_and_in_wrong_category(self):
-        vocab_file = open(LDR_brachy_check.vocab_path, "w")
+        vocab_file = open(LDR_brachy_check.treatment_vocab_path, "w")
         json.dump({"prostate": ["Prostate"], "vessie": ["Vessie"]}, vocab_file)
         vocab_file.close()
         data_path = os.path.join(data_folder, 'HDR.dcm')
@@ -134,7 +135,7 @@ class TestVerifyTreatmentSite(unittest.TestCase):
         self.assertFalse(verification)
 
     def test_treatment_site_not_in_vocab_with_vocab_update_disabled(self):
-        vocab_file = open(LDR_brachy_check.vocab_path, "w")
+        vocab_file = open(LDR_brachy_check.treatment_vocab_path, "w")
         json.dump({"prostate": ["Vessie"]}, vocab_file)
         vocab_file.close()
         data_path = os.path.join(data_folder, 'HDR.dcm')
@@ -142,7 +143,7 @@ class TestVerifyTreatmentSite(unittest.TestCase):
         self.assertFalse(verification)
 
     def test_treatment_site_not_in_vocab_with_vocab_update_enabled(self):
-        vocab_file = open(LDR_brachy_check.vocab_path, "w")
+        vocab_file = open(LDR_brachy_check.treatment_vocab_path, "w")
         json.dump({"Yes": ["Vessie"]}, vocab_file)
         vocab_file.close()
         data_path = os.path.join(data_folder, 'HDR.dcm')
@@ -151,7 +152,7 @@ class TestVerifyTreatmentSite(unittest.TestCase):
             verification = LDR_brachy_check.verify_treatment_site(data_path, "No")
             self.assertFalse(verification)
 
-        vocab_file = open(LDR_brachy_check.vocab_path, "w")
+        vocab_file = open(LDR_brachy_check.treatment_vocab_path, "w")
         json.dump({"Yes": ["Vessie"], "No": ["Vessie"]}, vocab_file)
         vocab_file.close()
 
@@ -159,7 +160,7 @@ class TestVerifyTreatmentSite(unittest.TestCase):
             verification = LDR_brachy_check.verify_treatment_site(data_path, "Yes")
             self.assertTrue(verification)
 
-        vocab_file = open(LDR_brachy_check.vocab_path, "w")
+        vocab_file = open(LDR_brachy_check.treatment_vocab_path, "w")
         json.dump({"Yes": ["Vessie"], "No": ["Vessie"]}, vocab_file)
         vocab_file.close()
 
@@ -168,8 +169,8 @@ class TestVerifyTreatmentSite(unittest.TestCase):
             self.assertFalse(verification)
 
     def tearDown(self) -> None:
-        if os.path.exists(LDR_brachy_check.vocab_path):
-            os.remove(LDR_brachy_check.vocab_path)
+        if os.path.exists(LDR_brachy_check.treatment_vocab_path):
+            os.remove(LDR_brachy_check.treatment_vocab_path)
 
 
 if __name__ == '__main__':

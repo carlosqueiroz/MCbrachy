@@ -7,7 +7,7 @@ from itertools import chain
 
 source_verification = {"LDR": ["I-125", "Pd-103", "Cs-131"], "HDR": ["Ir-192"]}
 
-vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "treatment_site_vocabulary.json")
+treatment_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "treatment_site_vocabulary.json")
 
 
 def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "LDR") -> bool:
@@ -82,9 +82,9 @@ def verify_if_source_corresponds_to_treatment_type(path_to_dicom: str, treatment
 
 def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocabulary_update: bool = False) -> bool:
     """
-    This method verifies if the treatement site in the DICOM RT PLAN is in the vocabulary list of desired treatment site.
-    If it is not and disable_vocabulary_update is Fasle, the user will be asked if he wants to add the new encountered
-    expression in one of the vocab category.
+    This method verifies if the treatement site in the DICOM RT PLAN is in the vocabulary list of desired treatment
+    site. If it is not and disable_vocabulary_update is Fasle, the user will be asked if he wants to add the new
+    encountered expression in one of the vocab category.
 
     :param path_to_dicom: path to the DICOM RT PLAN file
     :param treatment_site: treatment site string corresponding to one of the vocabulary keys
@@ -95,7 +95,7 @@ def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocab
     patient_id = open_dicom.PatientID
     instance_uid = open_dicom.SOPInstanceUID
     try:
-        treatment_site_vocabulary_file = open(vocab_path, "r")
+        treatment_site_vocabulary_file = open(treatment_vocab_path, "r")
         treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
         treatment_site_vocabulary_file.close()
         if open_dicom.Modality == "RTPLAN":
@@ -105,8 +105,8 @@ def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocab
                 return True
 
             if (dicom_treatment_site not in chain(*treatment_site_vocabulary.values())) and not disable_vocabulary_update:
-                add_expression_to_vocab(dicom_treatment_site, treatment_site_vocabulary)
-                treatment_site_vocabulary_file = open(vocab_path, "r")
+                add_expression_to_treatment_vocab(dicom_treatment_site, treatment_site_vocabulary)
+                treatment_site_vocabulary_file = open(treatment_vocab_path, "r")
                 treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
                 treatment_site_vocabulary_file.close()
 
@@ -130,7 +130,7 @@ def get_input(text):
     return input(text)
 
 
-def add_expression_to_vocab(dicom_treatment_site: str, treatment_site_vocabulary: dict) -> None:
+def add_expression_to_treatment_vocab(dicom_treatment_site: str, treatment_site_vocabulary: dict) -> None:
     """
     Because many words or expression can be used to describe the same structure,
     a dictionary has been created to keep track of the many expressions associated with the same concept.
@@ -158,7 +158,6 @@ def add_expression_to_vocab(dicom_treatment_site: str, treatment_site_vocabulary
 
             else:
                 logging.warning(f"The category has not been created, moving on.")
-    vocab_file = open(vocab_path, "w")
+    vocab_file = open(treatment_vocab_path, "w")
     json.dump(treatment_site_vocabulary, vocab_file)
     vocab_file.close()
-
