@@ -98,8 +98,5 @@ class TestIsThereProstateCalcificationInStudy(unittest.TestCase):
         self.assertFalse(calcification)
 
 
-
-
-
 if __name__ == '__main__':
     unittest.main()

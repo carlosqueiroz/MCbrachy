@@ -101,17 +101,14 @@ def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocab
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
             dicom_treatment_site = json_version_dicom["300A000B"]["Value"][0]
-            if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
-                return True
-
             if (dicom_treatment_site not in chain(*treatment_site_vocabulary.values())) and not disable_vocabulary_update:
                 add_expression_to_treatment_vocab(dicom_treatment_site, treatment_site_vocabulary)
                 treatment_site_vocabulary_file = open(treatment_vocab_path, "r")
                 treatment_site_vocabulary = json.loads(treatment_site_vocabulary_file.read())
                 treatment_site_vocabulary_file.close()
 
-                if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
-                    return True
+            if dicom_treatment_site in treatment_site_vocabulary[treatment_site]:
+                return True
 
             return False
 

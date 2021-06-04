@@ -54,8 +54,7 @@ class TestVerifyIfSourceCorrespondsToTreatmentType(unittest.TestCase):
 
 
 class TestAddExpressionToTreatmentVocab(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
+    def setUp(self):
         test_vocab_path = os.path.join(data_folder, "test_vocab.json")
         vocab_file = open(test_vocab_path, "w")
         json.dump({}, vocab_file)
@@ -104,8 +103,7 @@ class TestAddExpressionToTreatmentVocab(unittest.TestCase):
 
 
 class TestVerifyTreatmentSite(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
+    def setUp(self):
         test_vocab_path = os.path.join(data_folder, "test_vocab.json")
         vocab_file = open(test_vocab_path, "w")
         json.dump({}, vocab_file)
