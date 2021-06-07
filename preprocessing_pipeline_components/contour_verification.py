@@ -12,11 +12,17 @@ contour_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "co
 def verify_if_all_required_contours_are_present(path_to_dicom: str, desired_rois: List[str],
                                                 disable_vocabulary_update: bool = False) -> bool:
     """
+    This method iterates all contour in the DICOM RT STRUCT file until all desired rois have been found.
+    Every time a desired contour is found by verify_if_roi_in_desired_rois, the desired contour found is
+    removed from the desired rois list. This method returns True if the lengt of the desired rois
+    reaches 0 before having looked into all the DICOM RT STRUCT contours
 
-    :param disable_vocabulary_update:
-    :param path_to_dicom:
-    :param desired_rois:
-    :return:
+
+    :param disable_vocabulary_update: if set to false, this method will call add_expression_to_contour_vocab
+                                     when being exposed to an unknown expression
+    :param path_to_dicom: path to the DICOM RT STRUCT file
+    :param desired_rois: list of the desires rois (the desired rois need to be vocab categories)
+    :return: whether or not all desired rois are found amongst all DICOM contour of RT STRUCT
     """
     open_dicom = pydicom.dcmread(path_to_dicom)
     patient_id = open_dicom.PatientID
@@ -37,8 +43,8 @@ def verify_if_all_required_contours_are_present(path_to_dicom: str, desired_rois
                 elif verification_description:
                     del desired_rois[itd]
 
-            if len(desired_rois) == 0:
-                return True
+                if len(desired_rois) == 0:
+                    return True
 
             logging.info(f"ROIs {desired_rois} not found in instance {instance_uid} of patient {patient_id}")
             return False
@@ -57,11 +63,16 @@ def verify_if_all_required_contours_are_present(path_to_dicom: str, desired_rois
 def verify_if_roi_in_desired_rois(roi: str, desired_rois: list,
                                   disable_vocabulary_update: bool = False) -> Tuple[bool, int]:
     """
+    This method verifies whether or not the roi is in the desired rois. To do so, this method verifies if the
+    roi is in any of the desired rois category (in contour vocab). If found, this method will return True and
+    the index of the corresponding desired roi. In case of unknown error or if the roi is not in the
+    desired roi categories, this method will return False with an dummy index of -1.
 
-    :param roi:
-    :param desired_rois:
-    :param disable_vocabulary_update:
-    :return:
+    :param roi: the roi name found in DICOM
+    :param desired_rois: list of the desires rois (the desired rois need to be vocab categories)
+    :param disable_vocabulary_update: if set to false, this method will call add_expression_to_contour_vocab
+                                     when being exposed to an unknown expression
+    :return:(whether or not the roi is in the desired rois, index of the desired rois corresponding)
     """
     contour_vocabulary_file = open(contour_vocab_path, "r")
     contour_vocabulary = json.loads(contour_vocabulary_file.read())
