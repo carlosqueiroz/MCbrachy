@@ -8,12 +8,16 @@ from root import ROOT
 anonymized_uids_met_path = os.path.join(ROOT, "preprocessing_pipeline_components", "anonymized_uids_met.json")
 
 
-def dicom_has_already_been_looked_into(dicom_file_path: str, random_str_used_in_anonymization: str == "") -> bool:
+def dicom_has_already_been_looked_into(dicom_file_path: str, random_str_used_in_anonymization: str = "") -> bool:
     """
+    This method verifies if the Uid or the anonymized uid of the Diocm is already in the
+    anonymized_uids_met file. The random_str_used_in_anonymization must be the same
+    string used to anonymize the uids in the anonymized_uids_met file.
 
-    :param dicom_file_path:
-    :param random_str_used_in_anonymization:
-    :return:
+    :param dicom_file_path: path to the DICOM RT PLAN file
+    :param random_str_used_in_anonymization: string added to the original uid during anonymization (must be the same
+    as the one used when adding in anonymized_uids_met list)
+    :return: Whether or not the dicom has already been looked into
     """
     loaded_dicom = pydicom.dcmread(dicom_file_path)
     instance_uid = loaded_dicom.SOPInstanceUID
@@ -35,11 +39,11 @@ def dicom_has_already_been_looked_into(dicom_file_path: str, random_str_used_in_
 def add_instance_uid_to_anonymized_uids_met(dicom_file_path: str, random_str: str = "",
                                             with_anonymization: bool = True) -> None:
     """
+    This method adds the dicom uid or anonymized uid into the anonymized_uids_met file.
 
-    :param dicom_file_path:
-    :param random_str:
-    :param with_anonymization:
-    :return:
+    :param dicom_file_path: path to the DICOM RT PLAN file
+    :param random_str: string to add before the original uid when anonymizing
+    :param with_anonymization: whether or not the uid should be anonymized (use when DICOM not anonymized)
     """
 
     loaded_dicom = pydicom.dcmread(dicom_file_path)
@@ -59,5 +63,3 @@ def add_instance_uid_to_anonymized_uids_met(dicom_file_path: str, random_str: st
         anonymized_uids_met_file = open(anonymized_uids_met_path, "w")
         json.dump(anonymized_uids_met_list, anonymized_uids_met_file)
         anonymized_uids_met_file.close()
-
-
