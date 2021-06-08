@@ -35,7 +35,9 @@ def verify_if_all_required_contours_are_present(path_to_dicom: str, desired_rois
 
             for roi in structure_set_roi_sequence:
                 roi_name = roi["30060026"]["Value"][0]
+                logging.info(f"Roi Name={roi_name}")
                 roi_description = roi["30060028"]["Value"][0]
+                logging.info(f"Roi Description={roi_description}")
                 verification, it = verify_if_roi_in_desired_rois(roi_name, desired_rois, disable_vocabulary_update)
                 verification_description, itd = verify_if_roi_in_desired_rois(roi_description, desired_rois, True)
                 if verification:
@@ -112,7 +114,7 @@ def add_expression_to_contour_vocab(dicom_contour: str, contour_vocabulary: dict
     :param contour_vocabulary: dict of all the vocabulary
     """
     associated_contour = get_input(f"In which contour site category does {dicom_contour}"
-                                   f"go into? (existing categories: {contour_vocabulary.keys()}):")
+                                   f" go into? (existing categories: {contour_vocabulary.keys()}):")
     if associated_contour in contour_vocabulary.keys():
         contour_vocabulary[associated_contour].append(dicom_contour)
 

@@ -29,6 +29,7 @@ def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "L
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
             brachy_treatment_type = json_version_dicom["300A0202"]["Value"][0]
+            logging.info(f"treatment_type={brachy_treatment_type}")
             if brachy_treatment_type == treatment_type:
                 return True
 
@@ -64,7 +65,9 @@ def verify_if_source_corresponds_to_treatment_type(path_to_dicom: str, treatment
             json_version_dicom = open_dicom.to_json_dict()
             source_sequence = json_version_dicom["300A0210"]["Value"]
             for sources in source_sequence:
-                if sources["300A0226"]["Value"][0] not in source_verification[treatment_type]:
+                source = sources["300A0226"]["Value"][0]
+                logging.info(f"Source={source}")
+                if source not in source_verification[treatment_type]:
                     return False
 
             return True
@@ -101,6 +104,7 @@ def verify_treatment_site(path_to_dicom: str, treatment_site: str, disable_vocab
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
             dicom_treatment_site = json_version_dicom["300A000B"]["Value"][0]
+            logging.info(f"treatment_site={dicom_treatment_site}")
             if (dicom_treatment_site not in chain(*treatment_site_vocabulary.values())) and not disable_vocabulary_update:
                 add_expression_to_treatment_vocab(dicom_treatment_site, treatment_site_vocabulary)
                 treatment_site_vocabulary_file = open(treatment_vocab_path, "r")
