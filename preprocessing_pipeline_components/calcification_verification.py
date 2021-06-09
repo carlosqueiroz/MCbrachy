@@ -30,7 +30,7 @@ def generate_3d_image_from_series(path_to_series_folder: str) -> np.ndarray:
 
         return empty_3d_array
 
-    except AttributeError:
+    except (AttributeError, IndexError):
         logging.warning(f"Series {path_to_series_folder} does not contain images or there "
                         f"is an other modality among the images.")
 

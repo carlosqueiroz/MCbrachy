@@ -5,7 +5,7 @@ import json
 from root import ROOT
 from itertools import chain
 
-source_verification = {"LDR": ["I-125", "Pd-103", "Cs-131"], "HDR": ["Ir-192"]}
+source_verification = {"LDR": ["I-125", "Pd-103", "Cs-131", "---"], "HDR": ["Ir-192", "Co-60", "Cs-137", "---"]}
 
 treatment_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "treatment_site_vocabulary.json")
 
