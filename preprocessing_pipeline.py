@@ -56,12 +56,10 @@ for patient_folder in os.listdir(DICOM_PATH):
             continue
 
         if rt_plan_ok and rt_struct_ok:
-            with patch("preprocessing_pipeline_components.calcification_verification.plt.show"):
-                with patch("preprocessing_pipeline_components.calcification_verification.get_input", return_value="Yes"):
-                    if calcification_verification.is_there_prostate_calcification_in_study(study_folder_path):
-                        # anonymization.anonymize_whole_study()
-                        print("-----------------------------------------")
-                        total_count += 1
+            if calcification_verification.is_there_prostate_calcification_in_study(study_folder_path):
+                # anonymization.anonymize_whole_study()
+                print("-----------------------------------------")
+                total_count += 1
 
 print(total_count)
 
