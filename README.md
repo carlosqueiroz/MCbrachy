@@ -94,7 +94,7 @@ In the pipeline, knowing if something is shown is important to keep the pipeline
 This is why the plot_whole_series() returns True when something was shown to the user and False when something
 goes wrong. Here is an example of an US image shown using plot_whole_series().
 
-![plot](.\Images\example_US.png)
+![plot](Images\example_US.png)
 
 The method manual_selection_of_calcification() simply uses the plot_whole_series()
 method in order to show the DICOM 3D image to the user. As soon the user closes the image,
