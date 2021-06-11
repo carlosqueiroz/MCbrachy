@@ -164,8 +164,8 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s, %(module)s.%(funcName)s]
 
 DICOM_PATH = r"..\DICOMS"
 random_str = "random"
-ANONYMIZED_SELECTED_DATA = "..\LDR_database\no_calcification"
-ANONYMIZED_SELECTED_DATA_WITH_CALCIFICATION = "..\LDR_database\with_calcification"
+ANONYMIZED_SELECTED_DATA = r"..\LDR_database\no_calcification"
+ANONYMIZED_SELECTED_DATA_WITH_CALCIFICATION = r"..\LDR_database\with_calcification"
 
 
 it_patient = 0
