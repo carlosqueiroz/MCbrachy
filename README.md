@@ -222,6 +222,7 @@ for patient_folder in os.listdir(DICOM_PATH):
         
         # This means the study is not LDR prostate brachy
         if stop_looking_in_study:
+            it_studies += 1
             continue
         
          # RT PLAN and RT STRUCT verified and approuved
@@ -235,6 +236,9 @@ for patient_folder in os.listdir(DICOM_PATH):
             else:
               anonymization.anonymize_whole_study(study_folder_path, ANONYMIZED_SELECTED_DATA,
                                                   f"patient{it_patient}", random_str, f"study{it_studies}")
+                                                  
+        it_studies += 1
+    it_patient += 1
 ```
 
 
