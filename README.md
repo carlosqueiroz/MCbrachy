@@ -86,7 +86,33 @@ empty after looking at all the rois of the DICOM, the method returns False.
 
 ##### Calcification verification
 
+The last step is to identify calcification. To do so, it is necessary to look at the images.
+The plot_whole_series() method allows the user to view any 3d images form the DICOMS. More 
+precisely, this method plots a single slice of the 3d image at a time. A sliding button has been added 
+to the plot in order to interact with the plot and be able to navigate from one slice to the other.
+In the pipeline, knowing if something is shown is important to keep the pipeline flow from stopping.
+This is why the plot_whole_series() returns True when something was shown to the user and False when something
+goes wrong. Here is an example of an US image shown using plot_whole_series().
+
+![plot](.\Images\example_US.png)
+
+The method manual_selection_of_calcification() simply uses the plot_whole_series()
+method in order to show the DICOM 3D image to the user. As soon the user closes the image,
+the user will be asked, through the command prompt, whether or not there was calcification.
+If the answer is "Yes", the method will return True. On the other hand, if the answer is "No',
+the method will return False. If the plot_whole_series() returns False, the method won't prompt
+anything and simply return False
+
+In order to verify if there is any calcification in an entire study, the
+is_there_prostate_calcification_in_study() method simply calls manual_selection_of_calcification()
+on every series containing images until one of them has calcification. If the method goes through
+all of the series without ever receiving a positive answer, it will return False.
+
 ##### Data Tracker
+
+
+
+
 
 ##### Anonymization
 

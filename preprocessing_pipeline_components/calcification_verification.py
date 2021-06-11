@@ -46,27 +46,32 @@ def plot_whole_series(path_to_series_folder: str) -> bool:
     :param path_to_series_folder: path to the series folder
     :return: whether or not there was something to plot.
     """
-    values = generate_3d_image_from_series(path_to_series_folder)
-    if values.shape == np.zeros(1).shape:
-        logging.warning(f"Series {path_to_series_folder} had nothing to plot for verification.")
+    try:
+        values = generate_3d_image_from_series(path_to_series_folder)
+        if values.shape == np.zeros(1).shape:
+            logging.warning(f"Series {path_to_series_folder} had nothing to plot for verification.")
+            return False
+
+        max_slice = values.shape[2] - 1
+
+        plt.subplots_adjust(bottom=0.25)
+        dicom_3d_image = plt.imshow(values[:, :, int(max_slice/2)])
+        axslice = plt.axes([0.20, 0.15, 0.65, 0.02], facecolor='lightgoldenrodyellow')
+        slice_index = Slider(axslice, 'Slice', 0, max_slice, valinit=int(max_slice/2), valstep=1)
+
+        def update(val):
+            slice_value = slice_index.val
+            dicom_3d_image.set_data(values[:, :, slice_value])
+            plt.draw()
+
+        slice_index.on_changed(update)
+        plt.show()
+
+        return True
+
+    except:
+        logging.warning(f"Something went wrong while plotting series {path_to_series_folder}.")
         return False
-
-    max_slice = values.shape[2] - 1
-
-    plt.subplots_adjust(bottom=0.25)
-    dicom_3d_image = plt.imshow(values[:, :, int(max_slice/2)])
-    axslice = plt.axes([0.20, 0.15, 0.65, 0.02], facecolor='lightgoldenrodyellow')
-    slice_index = Slider(axslice, 'Slice', 0, max_slice, valinit=int(max_slice/2), valstep=1)
-
-    def update(val):
-        slice_value = slice_index.val
-        dicom_3d_image.set_data(values[:, :, slice_value])
-        plt.draw()
-
-    slice_index.on_changed(update)
-    plt.show()
-
-    return True
 
 
 def manual_selection_of_calcification(path_to_series_folder: str) -> bool:
