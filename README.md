@@ -5,11 +5,12 @@ used to parse a huge amount of DICOM datas in order to select the desired type o
 case, the utimate objective was to select LDR prostate brachytherapy with and without prostate calcification.
 But it can also be used in many other cases. The second one is the post processing. In this case, now tha the data
 has carefully been selected, all the essential information needed for Monte Carlo dose calculation has to be
-extracted from the DICOMs. Unfortunatly, this second part hasn't been developped yet.
+extracted from the DICOMs. Unfortunatly, this second part hasn't been developped yet. (please note that
+this code has been developped with python 3.8)
 
 ## Preprocessing pipeline
 
-#### LDR Brachytherapy case verification
+### LDR Brachytherapy case verification
 
 This first part of the preprocessing pipeline verifies if the information located in the DICOM RT PLAN
 indicate a low dose rate prostate brachytherapy. To do so, the user must first use the verify_if_brachy_treatment_type
@@ -54,7 +55,7 @@ is_prostate = LDR_brachy_case_verification.verify_treatment_site(DICOM_PATH, "pr
 
 ```
 
-##### Contour verification
+#### Contour verification
 Now that we know whether or not it is a LDR prostate brachytherapy, it is now time to verify if
 the desired contours are present in the DICOM RT STRUCT. Again, the expression used to specify an
 organ or anatomical structure can vary. This is why the contour verification also uses a vocabulary
@@ -84,7 +85,7 @@ empty after looking at all the rois of the DICOM, the method returns False.
 
 
 
-##### Calcification verification
+#### Calcification verification
 
 The last step is to identify calcification. To do so, it is necessary to look at the images.
 The plot_whole_series() method allows the user to view any 3d images form the DICOMS. More 
@@ -92,7 +93,8 @@ precisely, this method plots a single slice of the 3d image at a time. A sliding
 to the plot in order to interact with the plot and be able to navigate from one slice to the other.
 In the pipeline, knowing if something is shown is important to keep the pipeline flow from stopping.
 This is why the plot_whole_series() returns True when something was shown to the user and False when something
-goes wrong. Here is an example of an US image shown using plot_whole_series().
+goes wrong. Here is an example of an US image shown using plot_whole_series(). Here is an example of an US
+plotted with the plot_whole_series() method.
 
 <p align="center">
 <img src="https://gitlab.physmed.chudequebec.ca/sam23/dicom_rt_calcification_pipeline/raw/master/Images/example_US.png" width="600">
@@ -110,13 +112,44 @@ is_there_prostate_calcification_in_study() method simply calls manual_selection_
 on every series containing images until one of them has calcification. If the method goes through
 all of the series without ever receiving a positive answer, it will return False.
 
-##### Data Tracker
+#### Data Tracker
+
+This feature has been developped in order to ensure that no duplicates are created in the pipeline and
+to ensure that verification is not done on already verified data. To do so, this code uses a 
+anonymized_uids_met.json file to keep track of all the anonymized uids met.
+Even if the DICOM file has not been anonymized, only the anonymized version on the instance uid
+will be saved to that file. There are two methods in the data_tracker file,
+one to add instance uids to the file and one to verify if the DICOM file 
+has already been met in the past (using the uids in the file of course).
+
+Both dicom_has_already_been_looked_into() and add_instance_uid_to_anonymized_uids_met()
+are pretty straightforward. Both method uses the path to the DICOM file
+and uses pydicom to read the instance uids. The issue lies in the anonymization
+process. Because only anonymized uids should be saved, the algorithm should be able,
+knowing the real uids, re-obtain the same anonymized uids. To be able to do so,
+all anonymized uids must be produced with the anonymization_dataset method from
+dicom_anonymiseur and the same random string. Because both methods in the 
+data_tracker uses the anonymization_dataset method, only the random_str used
+to anonymize the uids stored in the file needs to be given to the methods.
+
+If the DICOM being investigated has already been anonymized, the user must
+specify that anonymization is not required in the add_instance_uid_to_anonymized_uids_met()
+so the algorythm does not try to re-anonymize the UID (and thus creating à duplicate).
 
 
 
+#### Anonymization
 
+Essentially, the methods in this file simply allows the user to anonymize all
+DICOMs in a whole patient/study/series with the anonymization_dataset method from
+dicom_anonymiseur. In general, this anonymization method deletes all free entry values,
+all private tags, and all values associated with private information. It also replaces
+all uids with new GRPM research uids. For more details on the standards followed in the 
+anonymization method, the reader is redirected toward the module documentation:
 
-##### Anonymization
+```sh
+https://gitlab.physmed.chudequebec.ca/gacou54/dicom-anonymiseur
+```
 
 
 
