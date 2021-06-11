@@ -150,7 +150,92 @@ anonymization method, the reader is redirected toward the module documentation:
 ```sh
 https://gitlab.physmed.chudequebec.ca/gacou54/dicom-anonymiseur
 ```
+#### Example of the entire preprocessing pipeline
+Here is an example of the whole pipeline when original datas are not already anonymized
+```sh
+import os
+import pydicom
+import logging
+from preprocessing_pipeline_components import contour_verification, anonymization, calcification_verification,\
+    data_tracker, LDR_brachy_case_verification
 
+logging.basicConfig(format='%(asctime)s [%(levelname)s, %(module)s.%(funcName)s]: %(message)s',
+                    level=logging.INFO)
+
+DICOM_PATH = r"..\DICOMS"
+random_str = "random"
+ANONYMIZED_SELECTED_DATA = "..\LDR_database\no_calcification"
+ANONYMIZED_SELECTED_DATA_WITH_CALCIFICATION = "..\LDR_database\with_calcification"
+
+
+it_patient = 0
+for patient_folder in os.listdir(DICOM_PATH):
+    patient_folder_path = os.path.join(DICOM_PATH, patient_folder)
+    it_studies = 0
+    for study_folder in os.listdir(patient_folder_path):
+        study_folder_path = os.path.join(patient_folder_path, study_folder)
+        stop_looking_in_study = False
+        rt_plan_ok = False
+        rt_struct_ok = False
+        for series_folder in os.listdir(study_folder_path):
+            series_folder_path = os.path.join(study_folder_path, series_folder)
+            dicoms_path = os.path.join(series_folder_path, os.listdir(series_folder_path)[0])
+            # verifying whether or not this DICOM has already been invesitgated
+            if data_tracker.dicom_has_already_been_looked_into(dicoms_path, random_str):
+                continue
+            open_dicom = pydicom.dcmread(dicoms_path)
+            if open_dicom.Modality == "RTPLAN" and not rt_plan_ok:
+                # adding DICOM to uids_met
+                data_tracker.add_instance_uid_to_anonymized_uids_met(dicoms_path, random_str,  with_anonymization=True)
+                
+                # Verifying treatment type
+                if not LDR_brachy_case_verification.verify_if_brachy_treatment_type(dicoms_path, "LDR"):
+                    stop_looking_in_study = True
+                    break
+                
+                # Verifying treatment site
+                if not LDR_brachy_case_verification.verify_treatment_site(dicoms_path, "prostate"):
+                    stop_looking_in_study = True
+                    break
+                    
+                # Verifying sources
+                if not LDR_brachy_case_verification.verify_if_source_corresponds_to_treatment_type(dicoms_path, "LDR"):
+                    stop_looking_in_study = True
+                    break
+
+                rt_plan_ok = True
+
+            if open_dicom.Modality == "RTSTRUCT" and not rt_struct_ok:
+                # adding DICOM to uids_met
+                data_tracker.add_instance_uid_to_anonymized_uids_met(dicoms_path, random_str,  with_anonymization=True)
+                
+                # Verifying contours
+                if not contour_verification.verify_if_all_required_contours_are_present(dicoms_path, ["vessie", "prostate"]):
+                    stop_looking_in_study = True
+                    break
+
+                rt_struct_ok = True
+            
+            # RT PLAN and RT STRUCT verified and approuved
+            if rt_plan_ok and rt_struct_ok:
+                break
+        
+        # This means the study is not LDR prostate brachy
+        if stop_looking_in_study:
+            continue
+        
+         # RT PLAN and RT STRUCT verified and approuved
+        if rt_plan_ok and rt_struct_ok:
+            # Verifying calcification
+            if calcification_verification.is_there_prostate_calcification_in_study(study_folder_path):
+              # create an anonymized copy of the study in the new folder
+              anonymization.anonymize_whole_study(study_folder_path, ANONYMIZED_SELECTED_DATA_WITH_CALCIFICATION,
+                                                  f"patient{it_patient}", random_str, f"study{it_studies}")
+            # create an anonymized copy of the study in the new folder
+            else:
+              anonymization.anonymize_whole_study(study_folder_path, ANONYMIZED_SELECTED_DATA,
+                                                  f"patient{it_patient}", random_str, f"study{it_studies}")
+```
 
 
 ## Postprocessing pipeline
