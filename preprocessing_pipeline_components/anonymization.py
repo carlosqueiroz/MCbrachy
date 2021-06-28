@@ -1,6 +1,7 @@
 import os
 import pydicom
 import logging
+import preprocessing_pipeline_components.patient_id_mapping as pat_id
 from dicom_anonymiseur.anonymization import anonymize_dataset
 from dicom_anonymiseur.util import hash_value
 
@@ -11,7 +12,8 @@ def anonymize_single_DICOM(dicom_file_path: str, anonymized_directory: str, new_
     """
     This method uses dicom_anonymiseur anonymization method. Simply said, it removes and replace all
     tags included in the Attribute Confidentiality Profile (DICOM PS 3.15: Appendix E). In UID's cases,
-    the anonymization method replaces the old UID by a grpm UID.
+    the anonymization method replaces the old UID by a grpm UID. This method will also verify if the new patient
+    id corresponds to the mapped patient Id inside the DICOM.
 
     :param anonymized_study_folder: desired name for the study folder name
     :param anonymized_instance_number: desired instance number
@@ -24,11 +26,22 @@ def anonymize_single_DICOM(dicom_file_path: str, anonymized_directory: str, new_
 
     loaded_dicom = pydicom.dcmread(dicom_file_path)
     patient_id = loaded_dicom.PatientID
+    if pat_id.is_patient_id_mapped(patient_id)[0]:
+        new_patient_id = pat_id.get_patient_id_conversion(patient_id)
+        logging.warning(f"New patient ID changed to {new_patient_id} for {patient_id} because the patient ID was "
+                        f"already mapped")
+
+    if pat_id.is_patient_id_mapped(new_patient_id)[0]:
+        assert pat_id.does_the_specific_mapping_already_exist(new_patient_id, patient_id)
+
     instance_uid = loaded_dicom.SOPInstanceUID
     logging.info(f"Anonymizing instance {instance_uid} of patient {patient_id}")
     loaded_dicom.remove_private_tags()
     anonymized_dicom = anonymize_dataset(loaded_dicom, random_str)
     anonymized_dicom.PatientID = new_patient_id
+    print("mapping: new_patient_id, patient_id")
+    pat_id.map_new_patient_id_with_old_one(new_patient_id, patient_id)
+
     anonymized_dicom.InstitutionName = hash_value(patient_id[:5])  # uses the institution part of the patient ID
 
     path_of_anonymized_dicom = os.path.join(anonymized_directory, new_patient_id, anonymized_study_folder,

@@ -3,11 +3,13 @@ import unittest
 import os
 import logging
 import pydicom
+import csv
 from preprocessing_pipeline_components import anonymization as anonym
+from preprocessing_pipeline_components import patient_id_mapping as pat_id
 from dicom_anonymiseur.util import hash_value
 from root import ROOT
 
-test_log_filename = os.path.join(ROOT, r'logs\test_logs')
+test_log_filename = os.path.join(ROOT, r'logs\test_logs.logs')
 logging.basicConfig(filename=test_log_filename,
                     format='%(asctime)s [%(levelname)s, %(module)s.%(funcName)s]: %(message)s',
                     filemode='w+',
@@ -20,6 +22,13 @@ class TestAnonymizeSingleDICOM(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.anonymized_data_dirname = "dummy_str"
+
+    def setUp(self):
+        patient_id_mapping_test_file_path = os.path.join(data_folder, "patientID_mapping_test.csv")
+        with open(patient_id_mapping_test_file_path, 'a', newline='') as csv_file:
+            mapping_writer = csv.writer(csv_file, delimiter=";")
+            mapping_writer.writerow(["Original PatientID", "New PatientID"])
+        pat_id.patient_id_mapping_file_path = patient_id_mapping_test_file_path
 
     def test_new_patient_id(self):
         data_path = os.path.join(data_folder, '1-1.dcm')
@@ -92,12 +101,21 @@ class TestAnonymizeSingleDICOM(unittest.TestCase):
     def tearDown(self) -> None:
         if os.path.exists(self.anonymized_data_dirname):
             shutil.rmtree(self.anonymized_data_dirname)
+        if os.path.exists(pat_id.patient_id_mapping_file_path):
+            os.remove(pat_id.patient_id_mapping_file_path)
 
 
 class TestAnonymizeWholeFolders(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.anonymized_data_dirname = "dummy_str"
+
+    def setUp(self):
+        patient_id_mapping_test_file_path = os.path.join(data_folder, "patientID_mapping_test.csv")
+        with open(patient_id_mapping_test_file_path, 'a', newline='') as csv_file:
+            mapping_writer = csv.writer(csv_file, delimiter=";")
+            mapping_writer.writerow(["Original PatientID", "New PatientID"])
+        pat_id.patient_id_mapping_file_path = patient_id_mapping_test_file_path
 
     def test_anonymization_whole_series(self):
         series_folder = os.path.join(data_folder, 'VS-SEG-001', "study", "01992")
@@ -181,6 +199,8 @@ class TestAnonymizeWholeFolders(unittest.TestCase):
     def tearDown(self) -> None:
         if os.path.exists(self.anonymized_data_dirname):
             shutil.rmtree(self.anonymized_data_dirname)
+        if os.path.exists(pat_id.patient_id_mapping_file_path):
+            os.remove(pat_id.patient_id_mapping_file_path)
 
 
 if __name__ == '__main__':
