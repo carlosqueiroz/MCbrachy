@@ -15,26 +15,6 @@ def extract_positionning_informations(path_to_the_frame_reference):
     return img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors
 
 
-def find_frame_of_reference_in_folder(frame_of_reference_UID, path_to_folder):
-    for sub_items in os.listdir(path_to_folder):
-        path_to_item = os.path.join(path_to_folder, sub_items)
-        if os.path.isdir(path_to_item):
-            found_file = find_frame_of_reference_in_folder(frame_of_reference_UID, path_to_item)
-            if found_file is not None:
-                return found_file
-
-        if path_to_item.endswith(".dcm"):
-            try:
-                dicom = pydicom.dcmread(path_to_item)
-                if dicom.FrameOfReferenceUID == frame_of_reference_UID:
-                    return path_to_item
-
-            except AttributeError:
-                logging.info(f"No FrameOfReferenceUID in file {path_to_item}")
-
-    return None
-
-
 def find_instance_in_folder(sop_instance_UID, path_to_folder):
     for sub_items in os.listdir(path_to_folder):
         path_to_item = os.path.join(path_to_folder, sub_items)
