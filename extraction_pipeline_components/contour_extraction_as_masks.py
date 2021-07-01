@@ -12,6 +12,10 @@ dp = dicomparser.DicomParser(path)
 list_struc = dp.GetStructureCoordinates(1)['-35.830'][0]["data"]
 
 
+def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path, folder_containing_associated_image):
+    pass
+
+
 def convert_list_of_real_coordinates_into_slice_pixel_coordinates(list_x_y_z_coord: List[List[str]],
                                                                   x_y_spacing, x_y_z_origin, x_y_z_rotation_vectors):
     x_spacing, y_spacing = float(x_y_spacing[0]), float(x_y_spacing[1])
