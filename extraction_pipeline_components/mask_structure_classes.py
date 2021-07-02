@@ -1,8 +1,8 @@
-from typing import List
-
+import os
 import numpy as np
 import pydicom
-from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import find_instance_in_folder
+from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
+    generate_3d_image_from_series
 
 
 class Structures:
@@ -71,10 +71,14 @@ class Mask:
         initial_mask = np.zeros(self.parent_structures.image_shape)
         last_image_uid = 0
         for slices in self.list_mask_slices:
-            initial_mask[slices.slice_number] = slices.mask_array
+            initial_mask[slices.slice_number, :, :] = slices.mask_array
             last_image_uid = slices.image_uid
 
-        return 0, initial_mask
+        path_to_image = find_instance_in_folder(last_image_uid, self.parent_structures.study_folder)
+        series_folder = os.path.dirname(path_to_image)
+        image = generate_3d_image_from_series(self.parent_structures.image_shape, series_folder)
+
+        return image, initial_mask
 
 
 class SliceMask:
@@ -85,12 +89,7 @@ class SliceMask:
         self.parent_mask = parent_mask
 
     def get_slice_mask_with_image(self):
-         image_path = find_instance_in_folder(self.image_uid, self.parent_mask.parent_structures.study_folder)
-         image = pydicom.dcmread(image_path).pixel_array
+        image_path = find_instance_in_folder(self.image_uid, self.parent_mask.parent_structures.study_folder)
+        image = pydicom.dcmread(image_path).pixel_array
 
-         return image, self.mask_array
-
-
-
-
-
+        return image, self.mask_array
