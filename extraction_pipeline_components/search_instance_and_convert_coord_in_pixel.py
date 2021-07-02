@@ -7,7 +7,7 @@ import logging
 def extract_positionning_informations(path_to_the_frame_reference):
     dicom = pydicom.dcmread(path_to_the_frame_reference)
     img_arr = dicom.pixel_array
-    img_shape = img_arr.shape
+    img_shape = int(dicom.InstanceNumber), img_arr.shape[0], img_arr.shape[1]
     x_y_z_spacing = dicom.PixelSpacing[0], dicom.PixelSpacing[1], dicom.SliceThickness
     x_y_z_origin = dicom.ImagePositionPatient
     x_y_z_rotation_vectors = dicom.ImageOrientationPatient
@@ -37,8 +37,10 @@ def find_instance_in_folder(sop_instance_UID, path_to_folder):
 
 def convert_real_coord_to_pixel_coord(array_x_y_z_coord: np.ndarray,
                                       x_y_z_spacing, x_y_z_origin, x_y_rotation_vectors):
+
     x_spacing, y_spacing, z_spacing = float(x_y_z_spacing[0]), float(x_y_z_spacing[1]), float(x_y_z_spacing[2])
     origin_x, origin_y, origin_z = x_y_z_origin
+
     z_rot_vector = np.cross(x_y_rotation_vectors[:3], x_y_rotation_vectors[3:6])
     array_x_y_z_coord[:, 0] = np.ceil((array_x_y_z_coord[:, 0] - origin_x)
                                       * (x_y_rotation_vectors[0] + x_y_rotation_vectors[3] + z_rot_vector[0])
@@ -46,11 +48,11 @@ def convert_real_coord_to_pixel_coord(array_x_y_z_coord: np.ndarray,
     array_x_y_z_coord[:, 1] = np.ceil((array_x_y_z_coord[:, 1] - origin_y)
                                       * (x_y_rotation_vectors[1] + x_y_rotation_vectors[4] + z_rot_vector[1])
                                       / y_spacing)
-    array_x_y_z_coord[:, 2] = np.ceil((array_x_y_z_coord[:, 2] - origin_z)
+    array_x_y_z_coord[:, 2] = - np.ceil((array_x_y_z_coord[:, 2] - origin_z)
                                       * (x_y_rotation_vectors[2] + x_y_rotation_vectors[5] + z_rot_vector[2])
                                       / z_spacing)
 
-    return array_x_y_z_coord
+    return array_x_y_z_coord.astype(dtype=np.int64)
 
 
 def convert_pixel_coord_to_real_coord(array_pixel_coord: np.ndarray,
@@ -66,3 +68,14 @@ def convert_pixel_coord_to_real_coord(array_pixel_coord: np.ndarray,
                                / (x_y_rotation_vectors[2] + x_y_rotation_vectors[5] + z_rot_vector[2])) + origin_z
 
     return array_pixel_coord
+
+
+def generate_3d_image_from_series(image_shape, series_folder):
+    initial_array = np.zeros(image_shape)
+    for sub_items in os.listdir(series_folder):
+        path_to_item = os.path.join(series_folder, sub_items)
+        dicom = pydicom.dcmread(path_to_item)
+        slice_number = -(int(dicom.InstanceNumber) - image_shape[0])
+        initial_array[slice_number] = dicom.pixel_array
+
+    return initial_array

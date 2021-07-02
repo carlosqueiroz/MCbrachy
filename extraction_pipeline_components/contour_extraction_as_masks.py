@@ -1,11 +1,13 @@
 import logging
 import os
 from typing import List
-
+from extraction_pipeline_components.mask_and_structures_object import Structures, Mask, SliceMask
 import matplotlib.pyplot as plt
 import numpy as np
 import pydicom
 from PIL import Image, ImageDraw
+from matplotlib.widgets import Slider
+
 from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import convert_real_coord_to_pixel_coord, \
     extract_positionning_informations, find_instance_in_folder
 
@@ -24,15 +26,30 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path, study_fol
             img_shape, x_y_z_spacing, \
             x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(path_to_reference_frame)
 
+            structure = Structures(img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, list_of_masks=[],
+                       study_folder=study_folder)
             json_version_dicom = open_dicom.to_json_dict()
             contours_context_dict = extract_contour_context_info(json_version_dicom)
             contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, x_y_z_spacing,
-                                   x_y_z_origin, x_y_z_rotation_vectors, study_folder)
+                                   x_y_z_origin, x_y_z_rotation_vectors)
 
+
+            list_of_masks = []
             for contours in contours_context_dict.keys():
-                contours_context_dict[contours].update(contours_and_image_dict[contours])
+                roi_name = contours_context_dict[contours]['ROIName']
+                roi_observation_label = contours_context_dict[contours]['ROIObservationLabel']
+                mask = Mask(roi_name, roi_observation_label, structure, list_mask_slices=[])
+                list_of_slices= []
+                for slices in contours_and_image_dict[contours].keys():
+                    list_of_slices.append(SliceMask(contours_and_image_dict[contours][slices]['mask'],
+                                                    contours_and_image_dict[contours][slices]['image_uid'],
+                                                    slices, mask))
+                mask.add_slices(list_of_slices)
+                list_of_masks.append(mask)
 
-            return contours_context_dict
+            structure.add_masks(list_of_masks)
+
+            return structure
 
         logging.warning(f"")
         return {}
@@ -60,7 +77,7 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct):
 
 
 def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct, img_shape, x_y_z_spacing,
-                                   x_y_z_origin, x_y_z_rotation_vectors, study_folder):
+                                   x_y_z_origin, x_y_z_rotation_vectors):
     roi_contour_sequence = json_dict_of_dicom_rt_struct["30060039"]["Value"]
     roi_contours_dict = {}
     for roi in roi_contour_sequence:
@@ -69,16 +86,18 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct, img_shape, x_y_
         for slice in roi["30060040"]["Value"]:
             contour_data = np.asarray(slice["30060050"]["Value"], dtype=np.float64)
             data_array = contour_data.reshape((contour_data.shape[0] // 3, 3))
-            slice_z = data_array[0, 2]
+            slice_z = convert_real_coord_to_pixel_coord(np.asarray([data_array[0]]), x_y_z_spacing,
+                                   x_y_z_origin, x_y_z_rotation_vectors)[0, 2]
+
             pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, x_y_z_spacing,
                                                                                  x_y_z_origin, x_y_z_rotation_vectors)
-            mask = produce_mask_from_contour_coord(pixel_tuples, img_shape)
+            mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
             image_uid = slice["30060016"]["Value"][0]["00081155"]["Value"][0]
-            image_path = find_instance_in_folder(image_uid, study_folder)
-            image = pydicom.dcmread(image_path).pixel_array
-            slices_dict[slice_z] = {"mask": mask, "image": image}
+            image = image_uid
+            slices_dict[slice_z] = {"mask": mask, "image_uid": image}
 
         roi_contours_dict[roi_number] = slices_dict
+
     return roi_contours_dict
 
 
@@ -99,13 +118,31 @@ def produce_mask_from_contour_coord(coord: list, img_shape):
     return mask
 
 
-path = r"E:\DICOMS\VS-SEG-001\09-04-1994-Avanto RoutineImage Guidance-88886\94436\1-1.dcm"
-dict_im = extract_masks_for_each_organs_for_each_slices(path, r"E:\DICOMS\VS-SEG-001\09-04-1994-Avanto RoutineImage Guidance-88886")
 
-for roi in dict_im.keys():
-    slices = list(dict_im[roi].keys())
-    mask = dict_im[roi][slices[4]]['mask']
-    image = dict_im[roi][slices[4]]['image']
-    plt.imshow(image)
-    plt.imshow(mask, alpha=0.5)
-    plt.show()
+path = r"E:\DICOMS\VS-SEG-001\09-04-1994-Avanto RoutineImage Guidance-88886\94436\1-1.dcm"
+struct = extract_masks_for_each_organs_for_each_slices(path,
+                                                        r"E:\DICOMS\VS-SEG-001\09-04-1994-Avanto RoutineImage Guidance-88886")
+
+
+mask = struct.get_specific_mask("TV", None)
+
+
+plt.subplots_adjust(bottom=0.25)
+list_of_slices = mask.list_slice_numbers()
+x, y = mask.get_specific_slice(list_of_slices[0]).get_slice_mask_with_image()
+dicom_3d_image = plt.imshow(x)
+mask_3d = plt.imshow(y, alpha=0.5)
+axslice = plt.axes([0.20, 0.15, 0.65, 0.02], facecolor='lightgoldenrodyellow')
+slice_index = Slider(axslice, 'Slice', 0, len(list_of_slices), valinit=0, valstep=1)
+
+
+def update(val):
+    slice_value = int(slice_index.val)
+    x, y = mask.get_specific_slice(list_of_slices[slice_value]).get_slice_mask_with_image()
+    dicom_3d_image.set_data(x)
+    mask_3d.set_data(y)
+    plt.draw()
+
+
+slice_index.on_changed(update)
+plt.show()
