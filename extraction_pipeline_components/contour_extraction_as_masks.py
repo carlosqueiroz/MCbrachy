@@ -12,15 +12,16 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path, study_fol
     open_dicom = pydicom.dcmread(rt_struct_file_path)
     try:
         if open_dicom.Modality == "RTSTRUCT":
-            first_image_uid = open_dicom.ReferencedFrameOfReferenceSequence[0][0x3006,
+            all_images_uids = open_dicom.ReferencedFrameOfReferenceSequence[0][0x3006,
                                                                                0x0012][0][0x3006,
                                                                                           0x0014][0][0x3006,
-                                                                                                     0x0016][0][0x0008,
-                                                                                                                0x1155].value
+                                                                                                     0x0016]
 
+            first_image_uid = all_images_uids[0][0x0008, 0x1155].value
             path_to_reference_frame = find_instance_in_folder(first_image_uid, study_folder)
-            img_shape, x_y_z_spacing, \
+            img_shape_2d, x_y_z_spacing, \
             x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(path_to_reference_frame)
+            img_shape = len(all_images_uids.value), img_shape_2d[0], img_shape_2d[1]
 
             structure = Structures(img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, list_of_masks=[],
                                    study_folder=study_folder)
@@ -30,7 +31,7 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path, study_fol
                                                                      x_y_z_origin, x_y_z_rotation_vectors)
 
             list_of_masks = []
-            for contours in contours_context_dict.keys():
+            for contours in contours_and_image_dict.keys():
                 roi_name = contours_context_dict[contours]['ROIName']
                 roi_observation_label = contours_context_dict[contours]['ROIObservationLabel']
                 mask = Mask(roi_name, roi_observation_label, structure, list_mask_slices=[])
@@ -76,22 +77,26 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct, img_shape, x_y_
     roi_contour_sequence = json_dict_of_dicom_rt_struct["30060039"]["Value"]
     roi_contours_dict = {}
     for roi in roi_contour_sequence:
+
         roi_number = roi["30060084"]["Value"][0]
         slices_dict = {}
-        for slices in roi["30060040"]["Value"]:
-            contour_data = np.asarray(slices["30060050"]["Value"], dtype=np.float64)
-            data_array = contour_data.reshape((contour_data.shape[0] // 3, 3))
-            slice_z = convert_real_coord_to_pixel_coord(np.asarray([data_array[0]]), x_y_z_spacing,
+        try:
+            for slices in roi["30060040"]["Value"]:
+                contour_data = np.asarray(slices["30060050"]["Value"], dtype=np.float64)
+                data_array = contour_data.reshape((contour_data.shape[0] // 3, 3))
+                slice_z = convert_real_coord_to_pixel_coord(np.asarray([data_array[0]]), x_y_z_spacing,
                                                         x_y_z_origin, x_y_z_rotation_vectors)[0, 2]
 
-            pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, x_y_z_spacing,
+                pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, x_y_z_spacing,
                                                                                  x_y_z_origin, x_y_z_rotation_vectors)
-            mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
-            image_uid = slices["30060016"]["Value"][0]["00081155"]["Value"][0]
-            image = image_uid
-            slices_dict[slice_z] = {"mask": mask, "image_uid": image}
+                mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
+                image_uid = slices["30060016"]["Value"][0]["00081155"]["Value"][0]
+                image = image_uid
+                slices_dict[slice_z] = {"mask": mask, "image_uid": image}
 
-        roi_contours_dict[roi_number] = slices_dict
+            roi_contours_dict[roi_number] = slices_dict
+        except KeyError:
+            logging.warning("")
 
     return roi_contours_dict
 
@@ -109,6 +114,5 @@ def produce_mask_from_contour_coord(coord: list, img_shape):
     img = Image.new(mode='L', size=img_shape, color=0)
     ImageDraw.Draw(img).polygon(xy=coord, outline=0, fill=1)
     mask = np.array(img).astype(bool)
-    print(mask.shape)
 
     return mask

@@ -1,12 +1,22 @@
 import os
 import numpy as np
 import pydicom
+from pydicom.uid import UID
 from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series
 
 
 class Structures:
     def __init__(self, image_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, list_of_masks, study_folder):
+        """
+
+        :param image_shape:
+        :param x_y_z_spacing:
+        :param x_y_z_origin:
+        :param x_y_z_rotation_vectors:
+        :param list_of_masks:
+        :param study_folder:
+        """
         self.image_shape = image_shape
         self.x_y_z_spacing = x_y_z_spacing
         self.x_y_z_origin = x_y_z_origin
@@ -76,19 +86,35 @@ class Mask:
 
         path_to_image = find_instance_in_folder(last_image_uid, self.parent_structures.study_folder)
         series_folder = os.path.dirname(path_to_image)
-        image = generate_3d_image_from_series(self.parent_structures.image_shape, series_folder)
+        image = generate_3d_image_from_series(self.parent_structures.image_shape, series_folder,
+                                              self.parent_structures.x_y_z_spacing, self.parent_structures.x_y_z_origin,
+                                              self.parent_structures.x_y_z_rotation_vectors)
 
         return image, initial_mask
 
 
 class SliceMask:
-    def __init__(self, mask_array: np.ndarray, image_uid: str, slice_number: int, parent_mask: Mask):
+    def __init__(self, mask_array: np.ndarray, image_uid: UID, slice_number: int, parent_mask: Mask):
+        """
+
+        :param mask_array:
+        :param image_uid:
+        :param slice_number:
+        :param parent_mask:
+        """
+        assert type(mask_array) == np.ndarray
+        assert type(slice_number) == int
+        assert type(parent_mask) == Mask
         self.image_uid = image_uid
         self.mask_array = mask_array
         self.slice_number = slice_number
         self.parent_mask = parent_mask
 
     def get_slice_mask_with_image(self):
+        """
+
+        :return:
+        """
         image_path = find_instance_in_folder(self.image_uid, self.parent_mask.parent_structures.study_folder)
         image = pydicom.dcmread(image_path).pixel_array
 
