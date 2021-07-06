@@ -4,7 +4,7 @@ from typing import Tuple, List, Dict
 import numpy as np
 import pydicom
 from pydicom.uid import UID
-from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
+from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series
 
 

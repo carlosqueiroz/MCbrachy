@@ -39,7 +39,6 @@ def anonymize_single_DICOM(dicom_file_path: str, anonymized_directory: str, new_
     loaded_dicom.remove_private_tags()
     anonymized_dicom = anonymize_dataset(loaded_dicom, random_str)
     anonymized_dicom.PatientID = new_patient_id
-    print("mapping: new_patient_id, patient_id")
     pat_id.map_new_patient_id_with_old_one(new_patient_id, patient_id)
 
     anonymized_dicom.InstitutionName = hash_value(patient_id[:5])  # uses the institution part of the patient ID

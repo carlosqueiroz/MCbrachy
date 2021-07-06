@@ -7,7 +7,8 @@ from itertools import chain
 
 source_verification = {"LDR": ["I-125", "Pd-103", "Cs-131", "---"], "HDR": ["Ir-192", "Co-60", "Cs-137", "---"]}
 
-treatment_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "treatment_site_vocabulary.json")
+treatment_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components",
+                                    "storing_files/treatment_site_vocabulary.json")
 
 
 def verify_if_brachy_treatment_type(path_to_dicom: str, treatment_type: str = "LDR") -> bool:

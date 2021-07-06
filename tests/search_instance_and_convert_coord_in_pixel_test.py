@@ -1,6 +1,6 @@
 import unittest
 from root import ROOT
-from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import *
+from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import *
 
 test_log_filename = os.path.join(ROOT, r'logs\test_logs')
 logging.basicConfig(filename=test_log_filename,

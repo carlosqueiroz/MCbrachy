@@ -6,7 +6,8 @@ from typing import Tuple
 
 from root import ROOT
 
-patient_id_mapping_file_path = os.path.join(ROOT, "preprocessing_pipeline_components", "patientID_mapping.csv")
+patient_id_mapping_file_path = os.path.join(ROOT, "preprocessing_pipeline_components", "storing_files",
+                                            "patientID_mapping.csv")
 
 
 def map_new_patient_id_with_old_one(new_patient_id: str, old_patient_id: str) -> None:

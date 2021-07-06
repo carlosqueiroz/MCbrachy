@@ -1,12 +1,12 @@
 import logging
 from typing import List, Tuple
 
-from extraction_pipeline_components.mask_structure_classes import Structures, Mask, SliceMask
+from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import Structures, Mask, SliceMask
 import numpy as np
 import pydicom
 from PIL import Image, ImageDraw
 
-from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import convert_real_coord_to_pixel_coord, \
+from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import convert_real_coord_to_pixel_coord, \
     extract_positionning_informations, find_instance_in_folder
 
 

@@ -6,7 +6,7 @@ from typing import List, Tuple
 from itertools import chain
 from root import ROOT
 
-contour_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "contour_vocabulary.json")
+contour_vocab_path = os.path.join(ROOT, "preprocessing_pipeline_components", "storing_files/contour_vocabulary.json")
 
 
 def verify_if_all_required_contours_are_present(path_to_dicom: str, desired_rois: List[str],

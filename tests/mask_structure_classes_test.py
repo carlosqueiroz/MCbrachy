@@ -1,7 +1,7 @@
 import logging
 import unittest
-from extraction_pipeline_components.mask_structure_classes import *
-from extraction_pipeline_components.search_instance_and_convert_coord_in_pixel import extract_positionning_informations
+from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import *
+from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import extract_positionning_informations
 from root import ROOT
 
 test_log_filename = os.path.join(ROOT, r'logs\test_logs')
