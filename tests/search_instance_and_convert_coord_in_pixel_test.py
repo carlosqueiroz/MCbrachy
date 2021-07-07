@@ -2,13 +2,13 @@ import unittest
 from root import ROOT
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import *
 
-test_log_filename = os.path.join(ROOT, r'logs\test_logs')
+test_log_filename = os.path.join(ROOT, "logs", "test_logs")
 logging.basicConfig(filename=test_log_filename,
                     format='%(asctime)s [%(levelname)s, %(module)s.%(funcName)s]: %(message)s',
                     filemode='w+',
                     level=logging.DEBUG)
 
-data_folder = os.path.join(ROOT, r'tests\test_data')
+data_folder = os.path.join(ROOT, "tests", "test_data")
 
 
 class TestExtractPositionningInformations(unittest.TestCase):
@@ -47,7 +47,8 @@ class TestFindInstanceInFolder(unittest.TestCase):
         uid = "1.3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"
         folder_path = os.path.join(data_folder, "fictional_study")
         path_to_instance = find_instance_in_folder(uid, folder_path)
-        self.assertEqual(path_to_instance, os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm"))
+        self.assertTrue(path_to_instance == os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm") or
+                        path_to_instance == os.path.join(data_folder, "fictional_study", "series1", "1-01.dcm"))
         bad_uid = "3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"
         path_to_instance = find_instance_in_folder(bad_uid, folder_path)
         self.assertEqual(path_to_instance, None)
@@ -56,7 +57,8 @@ class TestFindInstanceInFolder(unittest.TestCase):
         uid = "1.3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"
         folder_path = data_folder
         path_to_instance = find_instance_in_folder(uid, folder_path)
-        self.assertEqual(path_to_instance, os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm"))
+        self.assertTrue(path_to_instance == os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm") or
+                        path_to_instance == os.path.join(data_folder, "fictional_study", "series1", "1-01.dcm"))
         bad_uid = "3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"
         path_to_instance = find_instance_in_folder(bad_uid, folder_path)
         self.assertEqual(path_to_instance, None)

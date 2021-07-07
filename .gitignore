@@ -108,3 +108,4 @@ fabric.properties
 
 preprocessing_pipeline_components/patientID_mapping.csv
 venv\
+/venv/

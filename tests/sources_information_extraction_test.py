@@ -6,13 +6,13 @@ from extraction_pipeline_components.sources_information_extraction import extrac
     extract_sources_context_information, extract_all_sources_informations
 from root import ROOT
 
-test_log_filename = os.path.join(ROOT, r'logs\test_logs')
+test_log_filename = os.path.join(ROOT, "logs", "test_logs")
 logging.basicConfig(filename=test_log_filename,
                     format='%(asctime)s [%(levelname)s, %(module)s.%(funcName)s]: %(message)s',
                     filemode='w+',
                     level=logging.DEBUG)
 
-data_folder = os.path.join(ROOT, r'tests\test_data')
+data_folder = os.path.join(ROOT, "tests", "test_data")
 
 
 class TestExtractSourcesPositions(unittest.TestCase):

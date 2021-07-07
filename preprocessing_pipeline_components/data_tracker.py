@@ -6,7 +6,7 @@ from dicom_anonymiseur.anonymization import anonymize_dataset
 from root import ROOT
 
 anonymized_uids_met_path = os.path.join(ROOT, "preprocessing_pipeline_components",
-                                        "storing_files/anonymized_uids_met.json")
+                                        "storing_files", "anonymized_uids_met.json")
 
 
 def dicom_has_already_been_looked_into(dicom_file_path: str, random_str_used_in_anonymization: str = "") -> bool:
