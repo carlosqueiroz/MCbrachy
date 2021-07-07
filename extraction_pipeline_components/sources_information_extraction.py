@@ -17,7 +17,7 @@ def extract_sources_positions(path_to_rt_plan_file):
             sources_positions = {}
 
             for channel in channel_sequence:
-                ref_source = channel["300C000E"]["Value"]
+                ref_source = channel["300C000E"]["Value"][0]
                 brachy_control_point = channel["300A02D0"]["Value"][0]
                 sources_pos = brachy_control_point["300A02D4"]["Value"]
                 if "300A0412" in channel.keys():
@@ -32,7 +32,9 @@ def extract_sources_positions(path_to_rt_plan_file):
                     sources_positions[ref_source]["orientations"].append(sources_or)
 
             for ref_source in sources_positions.keys():
+                # noinspection PyTypeChecker
                 sources_positions[ref_source]["positions"] = np.asarray(sources_positions[ref_source]["positions"])
+                # noinspection PyTypeChecker
                 sources_positions[ref_source]["orientations"] = np.asarray(
                     sources_positions[ref_source]["orientations"])
 
@@ -54,10 +56,10 @@ def extract_sources_context_information(path_to_rt_plan_file):
     try:
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
-            rt_struct = json_version_dicom["300C0060"]["Value"][0]["00081155"]["Value"]
+            rt_struct = json_version_dicom["300C0060"]["Value"][0]["00081155"]["Value"][0]
             source_sequence = json_version_dicom["300A0210"]["Value"]
-            sources_dict = {"RTPlanDate": json_version_dicom["300A0006"],
-                            "RTPlanTime": json_version_dicom["300A0007"],
+            sources_dict = {"RTPlanDate": json_version_dicom["300A0006"]["Value"][0],
+                            "RTPlanTime": json_version_dicom["300A0007"]["Value"][0],
                             "RefRtStructUID": rt_struct}
 
             for sources in source_sequence:
@@ -65,8 +67,12 @@ def extract_sources_context_information(path_to_rt_plan_file):
                                "ReferenceAirKermaRate": sources["300A022A"]["Value"][0],
                                "SourceStrengthReferenceDate": sources["300A022C"]["Value"][0],
                                "SourceStrengthReferenceTime": sources["300A022E"]["Value"][0],
-                               "MaterialID": sources["300A00E1"]["Value"][0]}
-                sources_dict[sources["300A00E1"]["Value"][0]] = source_dict
+                               "MaterialID": sources["300A00E1"]["Value"][0],
+                               "SourceType": sources["300A0214"]["Value"][0],
+                               "SourceManufacturer": sources["300A0216"]["Value"][0],
+                               "ActiveSourceDiameter": sources["300A0218"]["Value"][0],
+                               "ActiveSourceLength": sources["300A021A"]["Value"][0]}
+                sources_dict[sources["300A0212"]["Value"][0]] = source_dict
 
             return sources_dict
 
@@ -82,13 +88,19 @@ def extract_sources_context_information(path_to_rt_plan_file):
 def extract_all_sources_informations(path_to_rt_plan_file):
     context = extract_sources_context_information(path_to_rt_plan_file)
     positions = extract_sources_positions(path_to_rt_plan_file)
+    if context == {} or positions == {}:
+        return None
+
     brachy_plan = LDRBrachyPlan(context["RefRtStructUID"], context["RTPlanDate"], context["RTPlanTime"])
     list_of_sources = []
     for sources in positions.keys():
         source = Sources(context[sources]["SourceIsotopeName"], context[sources]["ReferenceAirKermaRate"],
                          context[sources]["SourceStrengthReferenceDate"],
                          context[sources]["SourceStrengthReferenceTime"], context[sources]["MaterialID"],
-                         positions[sources]["positions"], positions[sources]["orientations"], brachy_plan)
+                         context[sources]["SourceType"], context[sources]["SourceManufacturer"],
+                         context[sources]["ActiveSourceDiameter"], context[sources]["ActiveSourceLength"],
+                         positions[sources]["positions"], positions[sources]["orientations"],
+                         brachy_plan)
         list_of_sources.append(source)
 
     brachy_plan.add_sources(list_of_sources)

@@ -52,12 +52,29 @@ class LDRBrachyPlan:
 
 
 class Sources:
-    def __init__(self, source_isotope_name, air_kerma_rate, ref_date, ref_time, material, positions, orientations,
-                 parent_plan):
+    def __init__(self, source_isotope_name, air_kerma_rate, ref_date, ref_time, material, source_type,
+                 source_manufacturer, source_diameter, source_lenght, positions, orientations, parent_plan):
         self.source_isotope_name = source_isotope_name
         self.air_kerma_rate = air_kerma_rate
         self.ref_date = ref_date
         self.ref_time = ref_time
         self.material = material
+        self.source_type = source_type
+        self.source_manufacturer = source_manufacturer
         self.parent_plan = parent_plan
+        self.source_diameter = source_diameter
+        self.source_lenght = source_lenght
+        self.positions = positions
+        self.orientations = orientations
 
+    def get_seperated_seed_positions(self):
+        pass
+
+    def convert_seed_positions_to_pixel(self):
+        pass
+
+    def get_actual_source_model(self):
+        pass
+
+    def get_source_spectrum(self):
+        pass
