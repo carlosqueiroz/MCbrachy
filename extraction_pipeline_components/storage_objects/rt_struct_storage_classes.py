@@ -11,7 +11,7 @@ from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_p
 class Structures:
     def __init__(self, image_shape: Tuple[int, int, int],
                  x_y_z_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
-                 x_y_z_rotation_vectors: List[float], list_of_masks, study_folder:str):
+                 x_y_z_rotation_vectors: List[float], list_of_masks, study_folder: str):
         """
         This object represents all the contours associated to a 3d image.
 
