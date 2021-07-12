@@ -29,7 +29,8 @@ class Dosimetry:
 
 class DVHistogram:
     def __init__(self, reference_roi_number, dose_units, dvh_dose_scaling, dvh_volume_units, dvh_number_of_bins,
-                 dvh_data, dvh_max, dvh_min, dvh_mean):
+                 dvh_data, dvh_max, dvh_min, dvh_mean, parent_dosi):
+        self.parent_dosi = parent_dosi
         self.dvh_mean = dvh_mean
         self.dvh_min = dvh_min
         self.dvh_max = dvh_max

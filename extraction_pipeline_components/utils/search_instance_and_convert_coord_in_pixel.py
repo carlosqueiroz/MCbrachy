@@ -22,8 +22,7 @@ def extract_positionning_informations(path_to_the_frame_reference: str) -> Tuple
     """
     try:
         dicom = pydicom.dcmread(path_to_the_frame_reference)
-        img_arr = dicom.pixel_array
-        img_shape_2d = img_arr.shape[0], img_arr.shape[1]
+        img_shape_2d = dicom.Rows, dicom.Columns
         x_y_z_spacing = float(dicom.PixelSpacing[0]), float(dicom.PixelSpacing[1]), float(dicom.SliceThickness)
         x_y_z_origin = dicom.ImagePositionPatient
         x_y_z_rotation_vectors = dicom.ImageOrientationPatient
