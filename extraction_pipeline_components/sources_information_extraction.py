@@ -13,23 +13,25 @@ def extract_sources_positions(path_to_rt_plan_file):
     try:
         if open_dicom.Modality == "RTPLAN":
             json_version_dicom = open_dicom.to_json_dict()
-            channel_sequence = json_version_dicom["300A0230"]["Value"][0]["300A0280"]["Value"]
+            application_setup_sequence = json_version_dicom["300A0230"]["Value"]
             sources_positions = {}
+            for application_setups in application_setup_sequence:
+                if "300A0280" in application_setups.keys():
+                    channel_sequence = application_setups["300A0280"]["Value"]
+                    for channel in channel_sequence:
+                        ref_source = channel["300C000E"]["Value"][0]
+                        brachy_control_point = channel["300A02D0"]["Value"][0]
+                        sources_pos = brachy_control_point["300A02D4"]["Value"]
+                        if "300A0412" in channel.keys():
+                            sources_or = brachy_control_point["300A0412"]["Value"]
+                        else:
+                            sources_or = []
 
-            for channel in channel_sequence:
-                ref_source = channel["300C000E"]["Value"][0]
-                brachy_control_point = channel["300A02D0"]["Value"][0]
-                sources_pos = brachy_control_point["300A02D4"]["Value"]
-                if "300A0412" in channel.keys():
-                    sources_or = brachy_control_point["300A0412"]["Value"]
-                else:
-                    sources_or = []
-
-                if ref_source not in sources_positions.keys():
-                    sources_positions[ref_source] = {"positions": [sources_pos], "orientations": [sources_or]}
-                else:
-                    sources_positions[ref_source]["positions"].append(sources_pos)
-                    sources_positions[ref_source]["orientations"].append(sources_or)
+                        if ref_source not in sources_positions.keys():
+                            sources_positions[ref_source] = {"positions": [sources_pos], "orientations": [sources_or]}
+                        else:
+                            sources_positions[ref_source]["positions"].append(sources_pos)
+                            sources_positions[ref_source]["orientations"].append(sources_or)
 
             for ref_source in sources_positions.keys():
                 # noinspection PyTypeChecker
