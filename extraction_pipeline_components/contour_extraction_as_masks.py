@@ -6,7 +6,8 @@ import numpy as np
 import pydicom
 from PIL import Image, ImageDraw
 
-from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import convert_real_coord_to_pixel_coord, \
+from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import \
+    convert_real_coord_to_pixel_coord, \
     extract_positionning_informations, find_instance_in_folder
 
 
@@ -24,23 +25,18 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
     open_dicom = pydicom.dcmread(rt_struct_file_path)
     try:
         if open_dicom.Modality == "RTSTRUCT":
-            all_images_uids = open_dicom.ReferencedFrameOfReferenceSequence[0][0x3006,
-                                                                               0x0012][0][0x3006,
-                                                                                          0x0014][0][0x3006,
-                                                                                                     0x0016]
-
-            first_image_uid = all_images_uids[0][0x0008, 0x1155].value
-            path_to_reference_frame = find_instance_in_folder(first_image_uid, study_folder)
+            image_ref_dict = build_image_references_dict(open_dicom)
+            path_to_reference_frame = find_instance_in_folder(image_ref_dict[1], study_folder)
             img_shape_2d, x_y_z_spacing, \
             x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(path_to_reference_frame)
-            img_shape = len(all_images_uids.value), img_shape_2d[0], img_shape_2d[1]
+            img_shape = len(image_ref_dict.keys()), img_shape_2d[0], img_shape_2d[1]
 
             structure = Structures(img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, list_of_masks=[],
                                    study_folder=study_folder)
             json_version_dicom = open_dicom.to_json_dict()
             contours_context_dict = extract_contour_context_info(json_version_dicom)
             contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, x_y_z_spacing,
-                                                                     x_y_z_origin, x_y_z_rotation_vectors)
+                                                                     x_y_z_origin, x_y_z_rotation_vectors, image_ref_dict)
 
             list_of_masks = []
             for contours in contours_and_image_dict.keys():
@@ -87,7 +83,11 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct: dict) -> dict:
     observation_label = {}
     for roi in observation_sequence:
         try:
-            observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": roi["30060085"]["Value"][0]}
+            if "30060085" in roi.keys():
+                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": roi["30060085"]["Value"][0]}
+            else:
+                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": roi["30060088"]["Value"][0]}
+
         except KeyError:
             observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": ""}
 
@@ -99,7 +99,7 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct: dict) -> dict:
 
 def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape: Tuple[int, int, int],
                                    x_y_z_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
-                                   x_y_z_rotation_vectors: List[float]) -> dict:
+                                   x_y_z_rotation_vectors: List[float], ref_images_dict) -> dict:
     """
     This method will use the rt struct json dict to extrac all of the masks and
     associated image uid. The output of this method will be in pixel coordinates.
@@ -116,7 +116,6 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
     roi_contour_sequence = json_dict_of_dicom_rt_struct["30060039"]["Value"]
     roi_contours_dict = {}
     for roi in roi_contour_sequence:
-
         roi_number = roi["30060084"]["Value"][0]
         slices_dict = {}
         try:
@@ -129,12 +128,21 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
                 pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, x_y_z_spacing,
                                                                                      x_y_z_origin,
                                                                                      x_y_z_rotation_vectors)
+
                 mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
-                image_uid = slices["30060016"]["Value"][0]["00081155"]["Value"][0]
+                if "30060016" in slices.keys():
+                    image_uid = slices["30060016"]["Value"][0]["00081155"]["Value"][0]
+                    print(image_uid)
+                    print(ref_images_dict[slice_z])
+
+                else:
+                    image_uid = ref_images_dict[slice_z]
+
                 image = image_uid
                 slices_dict[slice_z] = {"mask": mask, "image_uid": image}
 
             roi_contours_dict[roi_number] = slices_dict
+
         except KeyError:
             logging.warning(f"The roi {roi_number} does not have any images associated or something went wrong")
 
@@ -177,3 +185,28 @@ def produce_mask_from_contour_coord(coord: List[Tuple[int, int]], img_shape: Tup
     mask = np.array(img).astype(bool)
 
     return mask
+
+
+def find_right_slice_from_pixel_z_value(json_dict_of_dicom_rt_struct, slice_z):
+    return 0
+
+
+def build_image_references_dict(open_dicom):
+    all_images_uids = open_dicom.ReferencedFrameOfReferenceSequence[0][0x3006,
+                                                                       0x0012][0][0x3006,
+                                                                                  0x0014][0][0x3006,
+                                                                                             0x0016]
+    first_image_ref_frame_number = all_images_uids[0][0x0008, 0x1160].value
+    ref_images_dict = {}
+    if first_image_ref_frame_number is None:
+        it = 1
+        for elements in all_images_uids:
+            ref_images_dict[it] = elements[0x0008, 0x1155].value
+            it += 1
+
+    else:
+        for elements in all_images_uids:
+            it = int(elements[0x0008, 0x1160].value)
+            ref_images_dict[it] = elements[0x0008, 0x1155].value
+
+    return ref_images_dict
