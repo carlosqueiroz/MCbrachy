@@ -8,12 +8,23 @@ from extraction_pipeline_components.storage_objects.rt_dose_storage_classes impo
 
 
 def convert_index_dose_grid_into_dosimetry(dose_index_grid, dose_grid_scaling):
+    """
+
+    :param dose_index_grid:
+    :param dose_grid_scaling:
+    :return:
+    """
     scaled_dose = dose_grid_scaling * dose_index_grid
 
     return scaled_dose
 
 
 def extract_dosimetry(rt_dose_file_path):
+    """
+
+    :param rt_dose_file_path:
+    :return:
+    """
     open_dicom = pydicom.dcmread(rt_dose_file_path)
     try:
         if open_dicom.Modality == "RTDOSE":
@@ -56,6 +67,11 @@ def extract_dosimetry(rt_dose_file_path):
 
 
 def extract_dvh(rt_dose_file_path):
+    """
+
+    :param rt_dose_file_path:
+    :return:
+    """
     open_dicom = pydicom.dcmread(rt_dose_file_path)
     json_dicom = open_dicom.to_json_dict()
     try:
@@ -92,6 +108,11 @@ def extract_slice_thickness_from_rt_plan(rt_plan_uid):
 
 
 def extract_positioning_from_rt_dose(path_to_rt_dose):
+    """
+    
+    :param path_to_rt_dose:
+    :return:
+    """
     dicom = pydicom.dcmread(path_to_rt_dose)
     img_shape_3d = int(dicom.NumberOfFrames), int(dicom.Rows), int(dicom.Columns)
     if dicom.SliceThickness is None:
