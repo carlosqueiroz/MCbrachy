@@ -132,8 +132,6 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
                 mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
                 if "30060016" in slices.keys():
                     image_uid = slices["30060016"]["Value"][0]["00081155"]["Value"][0]
-                    print(image_uid)
-                    print(ref_images_dict[slice_z])
 
                 else:
                     image_uid = ref_images_dict[slice_z]
@@ -187,26 +185,19 @@ def produce_mask_from_contour_coord(coord: List[Tuple[int, int]], img_shape: Tup
     return mask
 
 
-def find_right_slice_from_pixel_z_value(json_dict_of_dicom_rt_struct, slice_z):
-    return 0
-
-
 def build_image_references_dict(open_dicom):
-    all_images_uids = open_dicom.ReferencedFrameOfReferenceSequence[0][0x3006,
-                                                                       0x0012][0][0x3006,
-                                                                                  0x0014][0][0x3006,
-                                                                                             0x0016]
-    first_image_ref_frame_number = all_images_uids[0][0x0008, 0x1160].value
+    all_images_uids = open_dicom.to_json_dict()["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
+
     ref_images_dict = {}
-    if first_image_ref_frame_number is None:
+    if "00081160" not in all_images_uids[0].keys():
         it = 1
         for elements in all_images_uids:
-            ref_images_dict[it] = elements[0x0008, 0x1155].value
+            ref_images_dict[it] = elements["00081155"]["Value"][0]
             it += 1
 
     else:
         for elements in all_images_uids:
-            it = int(elements[0x0008, 0x1160].value)
-            ref_images_dict[it] = elements[0x0008, 0x1155].value
+            it = int(elements["00081160"]["Value"][0])
+            ref_images_dict[it] = elements["00081155"]["Value"][0]
 
     return ref_images_dict
