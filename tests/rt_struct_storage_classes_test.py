@@ -18,7 +18,7 @@ class TestStructures(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         structure.add_masks(Mask("roi_name", "observation_label", structure, []))
         self.assertEqual(1, len(structure.list_of_masks))
@@ -27,7 +27,7 @@ class TestStructures(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         structure.add_masks([Mask("roi_name", "observation_label", structure, []),
                              Mask("roi_name", "observation_label", structure, []),
@@ -41,7 +41,7 @@ class TestMask(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         mask = Mask("roi_name", "observation_label", structure, [])
         mask.add_slices(SliceMask(np.asarray([1, 3, 3]), "uid", 0, mask))
@@ -52,7 +52,7 @@ class TestMask(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         mask = Mask("roi_name", "observation_label", structure, [])
         mask.add_slices([SliceMask(np.asarray([1, 3, 3]), "uid", 0, mask),
@@ -68,7 +68,7 @@ class TestSliceMask(unittest.TestCase):
             path_to_image)
         study_folder = os.path.join(data_folder, "fictional_study")
         uid = "1.3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], study_folder)
         mask = Mask("roi_name", "observation_label", structure, [])
         slice = SliceMask(np.asarray([1, 3, 3]), uid, 0, mask)
@@ -83,7 +83,7 @@ class TestAllClassesTogether(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         mask1 = Mask("roi_name1", "observation_label1", structure, [])
         mask2 = Mask("roi_name2", "observation_label2", structure, [])
@@ -98,7 +98,7 @@ class TestAllClassesTogether(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         mask1 = Mask("roi_name1", "observation_label1", structure, [])
         mask2 = Mask("roi_name2", "observation_label2", structure, [])
@@ -110,7 +110,7 @@ class TestAllClassesTogether(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         mask1 = Mask("roi_name1", "observation_label1", structure, [])
         uid1 = "1.3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"
@@ -128,7 +128,7 @@ class TestAllClassesTogether(unittest.TestCase):
         path_to_image = os.path.join(data_folder, "fictional_study", "series0", "1-01.dcm")
         img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(
             path_to_image)
-        structure = Structures((100, img_shape_2d[0], img_shape_2d[1]),
+        structure = Structures("uid", (100, img_shape_2d[0], img_shape_2d[1]),
                                x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, [], "study_folder")
         mask1 = Mask("roi_name1", "observation_label1", structure, [])
         uid1 = "1.3.6.1.4.1.14519.5.2.1.226742563510968359814545353392980263364"

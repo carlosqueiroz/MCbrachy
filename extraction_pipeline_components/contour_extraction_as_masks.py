@@ -17,7 +17,7 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
     In order to keep all the information organized, a Structure object will be created along with
     all the Mask and SliceMask objects required to contain all the information
 
-    :param rt_struct_file_path: path to the RTSTRUCT Diocm containing the desired rois
+    :param rt_struct_file_path: path to the RTSTRUCT Dicom containing the desired rois
     :param study_folder: path to the folder containing the whole study
 
     :return: a Structure object containing all contours
@@ -25,14 +25,20 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
     open_dicom = pydicom.dcmread(rt_struct_file_path)
     try:
         if open_dicom.Modality == "RTSTRUCT":
-            image_ref_dict = build_image_references_dict(open_dicom)
+            rt_struct_uid = str(open_dicom.SOPInstanceUID)
+            image_ref_dict = build_image_references_dict(open_dicom.to_json_dict())
+
             path_to_reference_frame = find_instance_in_folder(image_ref_dict[1], study_folder)
+
+            if path_to_reference_frame is None:
+                raise TypeError
+
             img_shape_2d, x_y_z_spacing, \
             x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(path_to_reference_frame)
             img_shape = len(image_ref_dict.keys()), img_shape_2d[0], img_shape_2d[1]
 
-            structure = Structures(img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors, list_of_masks=[],
-                                   study_folder=study_folder)
+            structure = Structures(rt_struct_uid, img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors,
+                                   list_of_masks=[], study_folder=study_folder)
             json_version_dicom = open_dicom.to_json_dict()
             contours_context_dict = extract_contour_context_info(json_version_dicom)
             contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, x_y_z_spacing,
@@ -55,11 +61,11 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
 
             return structure
 
-        logging.warning(f"")
+        logging.warning(f"{rt_struct_file_path} is not a RTSTRUCT as expected")
         return None
 
-    except KeyError:
-        logging.warning(f"")
+    except (KeyError, TypeError):
+        logging.warning(f"Something went wrong while extracting the contours")
         return None
 
 
@@ -75,7 +81,7 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct: dict) -> dict:
     roi_name_dict = {}
     for roi in structure_sequence:
         try:
-            roi_name_dict[roi["30060022"]["Value"][0]] = {"ROIName": roi["30060026"]["Value"][0]}
+            roi_name_dict[roi["30060022"]["Value"][0]] = {"ROIName": str(roi["30060026"]["Value"][0])}
         except KeyError:
             roi_name_dict[roi["30060022"]["Value"][0]] = {"ROIName": ""}
 
@@ -84,9 +90,9 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct: dict) -> dict:
     for roi in observation_sequence:
         try:
             if "30060085" in roi.keys():
-                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": roi["30060085"]["Value"][0]}
+                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": str(roi["30060085"]["Value"][0])}
             else:
-                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": roi["30060088"]["Value"][0]}
+                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": str(roi["30060088"]["Value"][0])}
 
         except KeyError:
             observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": ""}
@@ -104,6 +110,7 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
     This method will use the rt struct json dict to extrac all of the masks and
     associated image uid. The output of this method will be in pixel coordinates.
 
+    :param ref_images_dict: dictionary of all the images uids
     :param json_dict_of_dicom_rt_struct: json_dit associated to the original Dicom
     :param img_shape: shape of the 3d image
     :param x_y_z_spacing: spacial dimension of a voxel
@@ -185,19 +192,26 @@ def produce_mask_from_contour_coord(coord: List[Tuple[int, int]], img_shape: Tup
     return mask
 
 
-def build_image_references_dict(open_dicom):
-    all_images_uids = open_dicom.to_json_dict()["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
+def build_image_references_dict(open_dicom_as_json: dict) -> dict:
+    """
+    This method will build a dictionary associating each slice to an
+    image uid. This dictionary will be used when associating contours
+    slices with its image.
+    :param open_dicom_as_json: rt_struct dicom as json
+    :return: the dictionary having slice number as key and uid as value
+    """
+    all_images_uids = open_dicom_as_json["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
 
     ref_images_dict = {}
     if "00081160" not in all_images_uids[0].keys():
         it = 1
         for elements in all_images_uids:
-            ref_images_dict[it] = elements["00081155"]["Value"][0]
+            ref_images_dict[it] = str(elements["00081155"]["Value"][0])
             it += 1
 
     else:
         for elements in all_images_uids:
             it = int(elements["00081160"]["Value"][0])
-            ref_images_dict[it] = elements["00081155"]["Value"][0]
+            ref_images_dict[it] = str(elements["00081155"]["Value"][0])
 
     return ref_images_dict

@@ -3,15 +3,14 @@ from typing import Tuple, List, Dict
 
 import numpy as np
 import pydicom
-from pydicom.uid import UID
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series
 
 
 class Structures:
-    def __init__(self, image_shape: Tuple[int, int, int],
+    def __init__(self, rt_struct_uid: str, image_shape: Tuple[int, int, int],
                  x_y_z_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
-                 x_y_z_rotation_vectors: List[float], list_of_masks, study_folder:str):
+                 x_y_z_rotation_vectors: List[float], list_of_masks, study_folder: str):
         """
         This object represents all the contours associated to a 3d image.
 
@@ -22,6 +21,7 @@ class Structures:
         :param list_of_masks: list of Mask object associated to each contour
         :param study_folder: the path to the folder containing the study
         """
+        self.rt_struct_uid = rt_struct_uid
         self.image_shape = image_shape
         self.x_y_z_spacing = x_y_z_spacing
         self.x_y_z_origin = x_y_z_origin
@@ -186,7 +186,7 @@ class Mask:
 
 
 class SliceMask:
-    def __init__(self, mask_array: np.ndarray, image_uid: UID, slice_number: int, parent_mask: Mask):
+    def __init__(self, mask_array: np.ndarray, image_uid: str, slice_number: int, parent_mask: Mask):
         """
         This object represents a single image slice with a single mask array.
 
