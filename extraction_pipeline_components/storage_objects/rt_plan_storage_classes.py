@@ -6,7 +6,24 @@ from extraction_pipeline_components.storage_objects.rt_struct_storage_classes im
 
 
 class LDRBrachyPlan:
-    def __init__(self, rt_struct_uid, rt_plan_date, rt_plan_time, list_of_sources=None, structures: Structures = None):
+    def __init__(self, rt_plan_uid: str, rt_struct_uid: str, rt_dose_uid: str, rt_plan_date: str, rt_plan_time: float,
+                 list_of_sources: list = None, structures: Structures = None):
+        """
+        This class will be used to store all the information extracted
+        from a rt plan dicom. This specific class will only contain the global
+        context information. All the sources relative informations will be contained in the
+        sources objects stored inside this class
+
+        :param rt_plan_uid: uid of the rt plan associated with this treatment
+        :param rt_struct_uid: uid of the rt struct associated with this treatment
+        :param rt_dose_uid: uid of the rt dose associated with this treatment
+        :param rt_plan_date: date of the plan
+        :param rt_plan_time: time of the plan
+        :param list_of_sources: list of sources objects
+        :param structures: Structure object associated to the same treatment
+        """
+        self.rt_dose_uid = rt_dose_uid
+        self.rt_plan_uid = rt_plan_uid
         if list_of_sources is None:
             list_of_sources = []
         self.rt_struct_uid = rt_struct_uid
@@ -20,7 +37,17 @@ class LDRBrachyPlan:
         self.structures = structures
         self.list_of_sources = list_of_sources
 
-    def extract_structures(self, study_folder):
+    def extract_structures(self, study_folder: str) -> None:
+        """
+        Knowing the study folder and the uid of the rt struct,
+        this method will search for the rt struct file. If
+        it is found, it will extract all of its information
+        and store the associated Structures object into the
+        structures attribute. If a structure is already in
+        the attributes, this method won't do a thing.
+
+        :param study_folder: path to the folder containing the study
+        """
         if not self.structures_are_built:
             rt_struct_path = find_instance_in_folder(self.rt_struct_uid, study_folder)
             if rt_struct_path is None:
@@ -33,13 +60,15 @@ class LDRBrachyPlan:
 
         logging.warning("Structures are already built")
 
+    def extract_dosimetry(self):
+        raise NotImplementedError
+
     def add_sources(self, sources) -> None:
         """
-        This method adds one or many Masks to the
-        mask list_of_masks.
+        This method adds one or many sources to the
+        list_of_sources.
 
-        :param mask: Mask object or list of Mask objects
-        :return: None
+        :param sources:
         """
         if type(sources) is list:
             self.list_of_sources.extend(sources)
