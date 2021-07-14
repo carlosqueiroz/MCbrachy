@@ -1,13 +1,14 @@
 class Dosimetry:
-    def __init__(self, dose_data, dose_units, image_position_in_patient, patientorientation, dose_grid_shape,
+    def __init__(self, rt_dose_uid, dose_data, dose_units, image_position_in_patient, patient_orientation, dose_grid_shape,
                  pixel_spacing, dose_grid_scaling, rt_plan_uid, rt_struct_uid, list_of_dvh):
+        self.rt_dose_uid = rt_dose_uid
         self.list_of_dvh = list_of_dvh
         self.rt_struct_uid = rt_struct_uid
         self.rt_plan_uid = rt_plan_uid
         self.dose_grid_scaling = dose_grid_scaling
         self.pixel_spacing = pixel_spacing
         self.dose_grid_shape = dose_grid_shape
-        self.patientorientation = patientorientation
+        self.patient_orientation = patient_orientation
         self.image_position_in_patient = image_position_in_patient
         self.dose_units = dose_units
         self.dose_data = dose_data

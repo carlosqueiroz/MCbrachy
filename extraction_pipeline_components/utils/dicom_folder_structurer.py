@@ -4,7 +4,13 @@ import shutil
 import pydicom
 
 
-def restructure_dicom_folder(path_containing_all_dicoms, path_to_the_new_patient_folder):
+def restructure_dicom_folder(path_containing_all_dicoms: str, path_to_the_new_patient_folder: str) -> None:
+    """
+
+    :param path_containing_all_dicoms:
+    :param path_to_the_new_patient_folder:
+    :return:
+    """
     study_dict = {}
     series_dict = {}
 
@@ -23,7 +29,9 @@ def restructure_dicom_folder(path_containing_all_dicoms, path_to_the_new_patient
 
         if series_uid not in series_dict.keys():
             series_dict[series_uid] = it_series
-            os.makedirs(os.path.join(path_to_the_new_patient_folder, f"study{study_dict[study_uid]}", f"series{series_dict[series_uid]}"))
+            os.makedirs(os.path.join(path_to_the_new_patient_folder, f"study{study_dict[study_uid]}",
+                                     f"series{series_dict[series_uid]}"))
             it_series += 1
 
-        shutil.move(file_path, os.path.join(path_to_the_new_patient_folder, f"study{study_dict[study_uid]}", f"series{series_dict[series_uid]}"))
+        shutil.move(file_path, os.path.join(path_to_the_new_patient_folder, f"study{study_dict[study_uid]}",
+                                            f"series{series_dict[series_uid]}"))
