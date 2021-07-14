@@ -1,6 +1,5 @@
 from typing import Tuple, List
 
-from pydicom.uid import UID
 import numpy as np
 import pydicom
 import os
@@ -39,7 +38,7 @@ def extract_positionning_informations(path_to_the_frame_reference: str) -> Tuple
     return img_shape_2d, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors
 
 
-def find_instance_in_folder(sop_instance_UID: UID, path_to_folder: str) -> str or None:
+def find_instance_in_folder(sop_instance_UID: str, path_to_folder: str) -> str or None:
     """
     This method will look for a specific instance in à specified folder.
     The provided folder can also contain sub-folders that will also
