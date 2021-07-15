@@ -18,7 +18,7 @@ class TestExtractPositionningInformations(unittest.TestCase):
             path_to_image)
 
         self.assertEqual(img_shape_2d, (448, 448))
-        self.assertEqual(x_y_z_spacing, (0.46875, 0.46875, 1.5))
+        self.assertEqual(x_y_z_spacing, (1.5, 0.46875, 0.46875))
         self.assertEqual(x_y_z_origin, [-95.314769766409, -131.02905652754, -66.513922691345])
         self.assertEqual(x_y_z_rotation_vectors, [1, -2.051034e-010, 0, 2.051034e-010, 1, 0])
 

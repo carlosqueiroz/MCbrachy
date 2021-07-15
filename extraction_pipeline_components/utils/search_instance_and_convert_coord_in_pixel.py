@@ -22,7 +22,7 @@ def extract_positionning_informations(path_to_the_frame_reference: str) -> Tuple
     try:
         dicom = pydicom.dcmread(path_to_the_frame_reference)
         img_shape_2d = dicom.Rows, dicom.Columns
-        x_y_z_spacing = float(dicom.PixelSpacing[0]), float(dicom.PixelSpacing[1]), float(dicom.SliceThickness)
+        x_y_z_spacing = float(dicom.SliceThickness), float(dicom.PixelSpacing[0]), float(dicom.PixelSpacing[1])
         x_y_z_origin = dicom.ImagePositionPatient
         x_y_z_rotation_vectors = dicom.ImageOrientationPatient
 
@@ -79,7 +79,7 @@ def convert_real_coord_to_pixel_coord(array_x_y_z_coord: np.ndarray,
     :return: The coordinates in the pixel reference
     """
     try:
-        x_spacing, y_spacing, z_spacing = float(x_y_z_spacing[0]), float(x_y_z_spacing[1]), float(x_y_z_spacing[2])
+        z_spacing, y_spacing, x_spacing = float(x_y_z_spacing[0]), float(x_y_z_spacing[1]), float(x_y_z_spacing[2])
         origin_x, origin_y, origin_z = x_y_z_origin
 
         z_rot_vector = np.cross(x_y_rotation_vectors[:3], x_y_rotation_vectors[3:6])
@@ -112,7 +112,7 @@ def convert_pixel_coord_to_real_coord(array_pixel_coord: np.ndarray,
     :return: The coordinates in the pixel reference
     """
     try:
-        x_spacing, y_spacing, z_spacing = float(x_y_z_spacing[0]), float(x_y_z_spacing[1]), float(x_y_z_spacing[2])
+        z_spacing, y_spacing, x_spacing = float(x_y_z_spacing[0]), float(x_y_z_spacing[1]), float(x_y_z_spacing[2])
         origin_x, origin_y, origin_z = x_y_z_origin
 
         z_rot_vector = np.cross(x_y_rotation_vectors[:3], x_y_rotation_vectors[3:6])

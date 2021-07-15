@@ -174,7 +174,7 @@ def extract_positioning_from_rt_dose(path_to_rt_dose: str) -> Tuple[Tuple[int, i
     else:
         slice_thickness = dicom.SliceThickness
 
-    x_y_z_spacing = float(dicom.PixelSpacing[0]), float(dicom.PixelSpacing[1]), float(slice_thickness)
+    x_y_z_spacing = float(slice_thickness), float(dicom.PixelSpacing[0]), float(dicom.PixelSpacing[1]),
     x_y_z_origin = dicom.ImagePositionPatient
     x_y_z_rotation_vectors = dicom.ImageOrientationPatient
 
