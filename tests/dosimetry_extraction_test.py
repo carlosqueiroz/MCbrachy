@@ -73,7 +73,7 @@ class TestExtractDosimetry(unittest.TestCase):
         path_to_rt_dose = os.path.join(data_folder, "RTDOSE_with_DVH.dcm")
         dosi = extract_dosimetry(path_to_rt_dose)
         self.assertEqual(dosi.dose_grid_shape, (191, 114, 177))
-        self.assertEqual(dosi.pixel_spacing, (2.5, 2.5, 1.0))
+        self.assertEqual(dosi.pixel_spacing, (2.5, 2.5, -1.0))
         self.assertEqual(dosi.image_position_in_patient, [-223.2910156, -367.7369026, -325])
         self.assertEqual(dosi.patient_orientation, [1, 0, 0, 0, 1, 0])
         self.assertEqual(dosi.rt_dose_uid, "1.3.6.1.4.1.14519.5.2.1.2193.7172.164297574198062016125837186827")
