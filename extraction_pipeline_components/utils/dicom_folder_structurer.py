@@ -35,3 +35,20 @@ def restructure_dicom_folder(path_containing_all_dicoms: str, path_to_the_new_pa
 
         shutil.move(file_path, os.path.join(path_to_the_new_patient_folder, f"study{study_dict[study_uid]}",
                                             f"series{series_dict[series_uid]}"))
+
+
+def destructure_folder(path_of_the_patient_folder):
+        for study_folder in os.listdir(path_of_the_patient_folder):
+            study_folder_path = os.path.join(path_of_the_patient_folder, study_folder)
+            for series_folder in os.listdir(study_folder_path):
+                series_folder_path = os.path.join(study_folder_path, series_folder)
+                for dicoms in os.listdir(series_folder_path):
+                    dicom_path = os.path.join(series_folder_path, dicoms)
+                    shutil.move(dicom_path, path_of_the_patient_folder)
+                if len(os.listdir(series_folder_path)) != 0:
+                    raise ValueError
+                shutil.rmtree(series_folder_path)  # If so, delete it
+
+            if len(os.listdir(study_folder_path)) != 0:
+                raise ValueError
+            shutil.rmtree(study_folder_path)
