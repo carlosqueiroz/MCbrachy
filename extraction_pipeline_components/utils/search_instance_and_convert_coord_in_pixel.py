@@ -148,6 +148,6 @@ def generate_3d_image_from_series(image_shape: Tuple[int, int, int], series_fold
         dicom = pydicom.dcmread(path_to_item)
         slice_number = convert_real_coord_to_pixel_coord(np.asarray([dicom.ImagePositionPatient]), x_y_z_spacing,
                                                          x_y_z_origin, x_y_z_rotation_vectors)[0, 2]
-        initial_array[slice_number] = dicom.pixel_array
+        initial_array[slice_number] = dicom.pixel_array * dicom.RescaleSlope + dicom.RescaleIntercept
 
     return initial_array

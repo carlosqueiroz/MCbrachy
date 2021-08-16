@@ -3,7 +3,8 @@ import logging
 import numpy as np
 
 from extraction_pipeline_components.contour_extraction_as_masks import extract_masks_for_each_organs_for_each_slices
-from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder
+from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
+    convert_real_coord_to_pixel_coord
 from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import Structures
 
 
@@ -80,6 +81,67 @@ class LDRBrachyPlan:
 
     def get_structures(self):
         return self.structures
+
+    def segmenting_calcification(self, h, r, study_folder):
+        if not self.structures_are_built:
+            self.extract_structures(study_folder)
+
+        x_y_z_spacing, x_y_z_origin, x_y_rotation_vectors = self.structures.x_y_z_spacing, self.structures.x_y_z_origin,\
+                                                            self.structures.x_y_z_rotation_vectors
+
+        pos_in_pixels = convert_real_coord_to_pixel_coord(self.list_of_sources[0].positions, x_y_z_spacing,
+                                                          x_y_z_origin,
+                                                          x_y_rotation_vectors)
+
+        image, masks = self.structures.get_3d_image_with_all_masks()
+        calcification_mask = (348 < image) * masks["Target"]
+
+        def optimize_kills_on_number_of_slices(initial_mask, slice_mask, nb_slice_desired, theoretical_slice):
+            # with pm 1 for pixel incertainty
+            stack_of_slices = slice_mask.copy()
+            for i in range(0, nb_slice_desired - 1):
+                stack_of_slices = np.hstack([stack_of_slices, slice_mask])
+            pm = int((nb_slice_desired - 1) / 2)
+            assert nb_slice_desired == initial_mask[theoretical_slice - pm: theoretical_slice + pm + 1, :, :].shape[0]
+            kills_centerd = initial_mask[theoretical_slice - pm: theoretical_slice + pm + 1, :, :].sum()
+            chosen_center = theoretical_slice
+            for i in range(-1, 2):
+                offset_kills = initial_mask[i + theoretical_slice - pm: i + theoretical_slice + pm + 1, :, :].sum()
+                if offset_kills > kills_centerd:
+                    chosen_center = theoretical_slice + i
+                    kills_centerd = offset_kills
+
+            return chosen_center - pm, chosen_center + pm + 1, kills_centerd
+
+        def optimize_kills_on_y_x_and_z(initial_mask, nb_slice_desired, theoretical_slice, thoeritical_x,
+                                        theoretical_y):
+
+            d_sqared = ((index_grid[1] - thoeritical_x) * x_y_z_spacing[2]) ** 2 + (
+                    (index_grid[0] - theoretical_y) * x_y_z_spacing[1]) ** 2
+
+            min_z, max_z, kills = optimize_kills_on_number_of_slices(initial_mask, d_sqared < 25, nb_slice_desired,
+                                                                     theoretical_slice)
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    test_d_sqared = ((index_grid[1] - thoeritical_x + i) * x_y_z_spacing[2]) ** 2 + (
+                            (index_grid[0] - theoretical_y + j) * x_y_z_spacing[1]) ** 2
+                    t_min_z, t_max_z, t_kills = optimize_kills_on_number_of_slices(calcification_mask,
+                                                                                   test_d_sqared < r**2, 3,
+                                                                                   theoretical_slice)
+                    if t_kills > kills:
+                        min_z, max_z, kills = t_min_z, t_max_z, t_kills
+                        d_sqared = test_d_sqared
+
+            return min_z, max_z, d_sqared
+
+        index_grid = np.indices(calcification_mask[0, :, :].shape)
+        for i in range(0, len(pos_in_pixels)):
+            min_index, max_index, d_sqared = optimize_kills_on_y_x_and_z(calcification_mask, 5, pos_in_pixels[i, 2],
+                                                                         pos_in_pixels[i, 0], pos_in_pixels[i, 1])
+            calcification_mask[min_index: max_index, :, :] = calcification_mask[min_index:max_index, :, :] * (
+                        r**2 < d_sqared)
+
+        return calcification_mask
 
 
 class Sources:
