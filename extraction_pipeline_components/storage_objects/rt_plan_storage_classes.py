@@ -1,5 +1,7 @@
 import logging
 
+import numpy as np
+
 from extraction_pipeline_components.contour_extraction_as_masks import extract_masks_for_each_organs_for_each_slices
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder
 from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import Structures
@@ -107,3 +109,23 @@ class Sources:
 
     def get_source_spectrum(self):
         pass
+
+    def generate_transformation_file_for_sources(self, new_file_path):
+        pos = self.positions / 10
+        orientation = self.orientations
+        print(orientation.shape)
+        if orientation.shape[1] == 0:
+            orientation = np.zeros((pos.shape[0], pos.shape[1]))
+
+        vocab_file = open(new_file_path, "w")
+        print(orientation)
+        for i in range(0, pos.shape[0]):
+            vocab_file.write(":start transformation: \n")
+            vocab_file.write(f"translation = {pos[i, 0]} {pos[i, 1]} {pos[i, 2]} \n")
+            vocab_file.write(f"rotation = {orientation[i, 0]} {orientation[i, 1]} {orientation[i, 2]} \n")
+            vocab_file.write(":stop transformation:\n\n")
+
+
+        vocab_file.close()
+
+
