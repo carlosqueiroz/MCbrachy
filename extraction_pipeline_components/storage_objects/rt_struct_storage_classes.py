@@ -3,8 +3,113 @@ from typing import Tuple, List, Dict
 
 import numpy as np
 import pydicom
+
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series
+
+
+class SliceMask:
+    def __init__(self, mask_array: np.ndarray, image_uid: str, slice_number: int, parent_mask):
+        """
+        This object represents a single image slice with a single mask array.
+
+        :param mask_array: 2d array
+        :param image_uid: uid of the associated image
+        :param slice_number: the slice number in the 3d pixel coordinates
+        :param parent_mask: mask containing all the slice associated with the same contour
+        """
+        self.image_uid = image_uid
+        self.mask_array = mask_array
+        self.slice_number = slice_number
+        self.parent_mask = parent_mask
+
+    def get_slice_mask_with_image(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        This method will search for the image associated to the
+        mask. This image should be located somewhere in the study_folder
+        of the parent structure.
+
+        :return: the 2D image associated with the 2d mask
+        """
+        image_path = find_instance_in_folder(self.image_uid, self.parent_mask.parent_structures.study_folder)
+        image = pydicom.dcmread(image_path).pixel_array
+
+        return image, self.mask_array
+
+
+class Mask:
+    def __init__(self, roi_name: str, observation_label: str, parent_structures, list_mask_slices):
+        """
+        This class represents a full contour made of multiple slices.
+
+        :param roi_name: roi name corresponding to the contour
+        :param observation_label: observation label given to the contour
+        :param parent_structures: the parent structure object containing the frame of reference info.
+        :param list_mask_slices: list of the SliceMask objects
+        """
+        self.roi_name = roi_name
+        self.observation_label = observation_label
+        self.parent_structures = parent_structures
+        self.list_mask_slices = list_mask_slices
+
+    def add_slices(self, slices) -> None:
+        """
+        This method adds one or many SliceMasks to the
+        mask list_mask_slices.
+
+        :param slices: SliceMask object or list of SliceMask objects
+        :return: None
+        """
+        if type(slices) is list:
+            self.list_mask_slices.extend(slices)
+
+        else:
+            self.list_mask_slices.append(slices)
+
+    def list_slice_numbers(self) -> List[int]:
+        """
+        This method simply returns a list of all the
+        possible values of slice number
+        :return: list of slice numbers contained in the mask
+        """
+        list_slice_numbers = []
+        for mask_slices in self.list_mask_slices:
+            list_slice_numbers.append(mask_slices.slice_number)
+
+        return list_slice_numbers
+
+    def get_specific_slice(self, slice_number):
+        """
+        This method will simply return the corresponding Slice
+        for the given slice number. This method returns None when not found
+
+        :param slice_number: the desired slice number
+        :return: None or SliceMask
+        """
+        for slice_mask in self.list_mask_slices:
+            if slice_number == slice_mask.slice_number:
+                return slice_mask
+
+    def get_3d_mask_with_3d_image(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        This method will fuse all the slices into one 3d mask with one 3d image.
+
+
+        :return: the 3d image and the 3d mask array
+        """
+        initial_mask = np.zeros(self.parent_structures.image_shape)
+        last_image_uid = 0
+        for slices in self.list_mask_slices:
+            initial_mask[slices.slice_number, :, :] = slices.mask_array
+            last_image_uid = slices.image_uid
+
+        path_to_image = find_instance_in_folder(last_image_uid, self.parent_structures.study_folder)
+        series_folder = os.path.dirname(path_to_image)
+        image = generate_3d_image_from_series(self.parent_structures.image_shape, series_folder,
+                                              self.parent_structures.x_y_z_spacing, self.parent_structures.x_y_z_origin,
+                                              self.parent_structures.x_y_z_rotation_vectors)
+
+        return image, initial_mask
 
 
 class Structures:
@@ -96,7 +201,7 @@ class Structures:
             initial_mask = np.zeros(self.image_shape)
 
             for slices in mask.list_mask_slices:
-                initial_mask[slices.slice_number, :, :] = slices.mask_array
+                initial_mask[slices.slice_number - 1, :, :] = slices.mask_array
                 last_image_uid = slices.image_uid
 
             mask_dict[mask.roi_name] = initial_mask
@@ -119,7 +224,6 @@ class Structures:
             current_struct = density_dict[i]["structure"]
             current_index = i
             current_density = density_dict[i]["density"]
-            print(current_density)
             density_tensor = np.ma.array(density_tensor, mask=np.flip(mask_dict[current_struct], axis=0)).filled(
                 current_density)
             struct_tensor = np.ma.array(struct_tensor, mask=np.flip(mask_dict[current_struct], axis=0)).filled(
@@ -202,110 +306,44 @@ class Structures:
         nb_z, nb_y, nb_x = self.image_shape
         x_bounds = (np.arange(0, nb_x + 1) * spacing_x) + origin_x
         y_bounds = (np.arange(0, nb_y + 1) * spacing_y) + origin_y
-        z_bounds = -(np.arange(nb_z,  -1, -1) * spacing_z) + origin_z
+        z_bounds = -(np.arange(nb_z, -1, -1) * spacing_z) + origin_z
 
         return x_bounds, y_bounds, z_bounds
 
+    def add_mask_from_3d_array(self, mask_3d, roi_name, observation_label):
+        path_to_dicom = find_instance_in_folder(self.rt_struct_uid, self.study_folder)
+        json_dicom = pydicom.dcmread(path_to_dicom).to_json_dict()
+        uid_dict = self.rebuild_image_references_dict(json_dicom)
+        new_mask = Mask(roi_name, observation_label, self, [])
+        for i in range(0, len(mask_3d)):
+            new_mask.add_slices(SliceMask(mask_3d[i, :, :], uid_dict[i + 1], i, new_mask))
 
-class Mask:
-    def __init__(self, roi_name: str, observation_label: str, parent_structures: Structures, list_mask_slices):
-        """
-        This class represents a full contour made of multiple slices.
+        self.add_masks(new_mask)
 
-        :param roi_name: roi name corresponding to the contour
-        :param observation_label: observation label given to the contour
-        :param parent_structures: the parent structure object containing the frame of reference info.
-        :param list_mask_slices: list of the SliceMask objects
+    @staticmethod
+    def rebuild_image_references_dict(open_dicom_as_json: dict) -> dict:
         """
-        self.roi_name = roi_name
-        self.observation_label = observation_label
-        self.parent_structures = parent_structures
-        self.list_mask_slices = list_mask_slices
+        This method will build a dictionary associating each slice to an
+        image uid. This dictionary will be used when associating contours
+        slices with its image.
+        :param open_dicom_as_json: rt_struct dicom as json
+        :return: the dictionary having slice number as key and uid as value
+        """
+        all_images_uids = \
+        open_dicom_as_json["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
 
-    def add_slices(self, slices) -> None:
-        """
-        This method adds one or many SliceMasks to the
-        mask list_mask_slices.
-
-        :param slices: SliceMask object or list of SliceMask objects
-        :return: None
-        """
-        if type(slices) is list:
-            self.list_mask_slices.extend(slices)
+        ref_images_dict = {}
+        if "00081160" not in all_images_uids[0].keys():
+            it = 1
+            for elements in all_images_uids:
+                ref_images_dict[it] = str(elements["00081155"]["Value"][0])
+                it += 1
 
         else:
-            self.list_mask_slices.append(slices)
+            for elements in all_images_uids:
+                it = int(elements["00081160"]["Value"][0])
+                ref_images_dict[it] = str(elements["00081155"]["Value"][0])
 
-    def list_slice_numbers(self) -> List[int]:
-        """
-        This method simply returns a list of all the
-        possible values of slice number
-        :return: list of slice numbers contained in the mask
-        """
-        list_slice_numbers = []
-        for mask_slices in self.list_mask_slices:
-            list_slice_numbers.append(mask_slices.slice_number)
-
-        return list_slice_numbers
-
-    def get_specific_slice(self, slice_number):
-        """
-        This method will simply return the corresponding Slice
-        for the given slice number. This method returns None when not found
-
-        :param slice_number: the desired slice number
-        :return: None or SliceMask
-        """
-        for slice_mask in self.list_mask_slices:
-            if slice_number == slice_mask.slice_number:
-                return slice_mask
-
-    def get_3d_mask_with_3d_image(self) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        This method will fuse all the slices into one 3d mask with one 3d image.
+        return ref_images_dict
 
 
-        :return: the 3d image and the 3d mask array
-        """
-        initial_mask = np.zeros(self.parent_structures.image_shape)
-        last_image_uid = 0
-        for slices in self.list_mask_slices:
-            initial_mask[slices.slice_number, :, :] = slices.mask_array
-            last_image_uid = slices.image_uid
-
-        path_to_image = find_instance_in_folder(last_image_uid, self.parent_structures.study_folder)
-        series_folder = os.path.dirname(path_to_image)
-        image = generate_3d_image_from_series(self.parent_structures.image_shape, series_folder,
-                                              self.parent_structures.x_y_z_spacing, self.parent_structures.x_y_z_origin,
-                                              self.parent_structures.x_y_z_rotation_vectors)
-
-        return image, initial_mask
-
-
-class SliceMask:
-    def __init__(self, mask_array: np.ndarray, image_uid: str, slice_number: int, parent_mask: Mask):
-        """
-        This object represents a single image slice with a single mask array.
-
-        :param mask_array: 2d array
-        :param image_uid: uid of the associated image
-        :param slice_number: the slice number in the 3d pixel coordinates
-        :param parent_mask: mask containing all the slice associated with the same contour
-        """
-        self.image_uid = image_uid
-        self.mask_array = mask_array
-        self.slice_number = slice_number
-        self.parent_mask = parent_mask
-
-    def get_slice_mask_with_image(self) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        This method will search for the image associated to the
-        mask. This image should be located somewhere in the study_folder
-        of the parent structure.
-
-        :return: the 2D image associated with the 2d mask
-        """
-        image_path = find_instance_in_folder(self.image_uid, self.parent_mask.parent_structures.study_folder)
-        image = pydicom.dcmread(image_path).pixel_array
-
-        return image, self.mask_array

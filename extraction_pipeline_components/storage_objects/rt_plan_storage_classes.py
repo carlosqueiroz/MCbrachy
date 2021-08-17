@@ -89,7 +89,7 @@ class LDRBrachyPlan:
         x_y_z_spacing, x_y_z_origin, x_y_rotation_vectors = self.structures.x_y_z_spacing, self.structures.x_y_z_origin,\
                                                             self.structures.x_y_z_rotation_vectors
 
-        pos_in_pixels = convert_real_coord_to_pixel_coord(self.list_of_sources[0].positions, x_y_z_spacing,
+        pos_in_pixels = convert_real_coord_to_pixel_coord(self.list_of_sources[0].positions.copy(), x_y_z_spacing,
                                                           x_y_z_origin,
                                                           x_y_rotation_vectors)
 
@@ -174,13 +174,13 @@ class Sources:
 
     def generate_transformation_file_for_sources(self, new_file_path):
         pos = self.positions / 10
+        print(pos)
         orientation = self.orientations
         print(orientation.shape)
         if orientation.shape[1] == 0:
             orientation = np.zeros((pos.shape[0], pos.shape[1]))
 
         vocab_file = open(new_file_path, "w")
-        print(orientation)
         for i in range(0, pos.shape[0]):
             vocab_file.write(":start transformation: \n")
             vocab_file.write(f"translation = {pos[i, 0]} {pos[i, 1]} {pos[i, 2]} \n")
