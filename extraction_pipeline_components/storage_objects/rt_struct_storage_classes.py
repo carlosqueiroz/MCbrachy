@@ -214,7 +214,22 @@ class Structures:
 
         return image, mask_dict
 
-    def generate_egs_phant_file_from_structures(self, new_file_path, density_dict):
+    def generate_egs_phant_file_from_structures(self, new_file_path: str, density_dict: dict) -> None:
+        """
+        This method will produce a egs_phant file from all the contour specified in the density_dict.
+
+        The keys of the density_dict must be from 1 to the number of contours desired. The integer key will specify
+        which contour must be underneath the others.
+
+        Each integer keys must be associated to dict with three keys:
+            structure: the roi name of the associated mask
+            density: the density of the material
+            name_in_egs: the name that will be written in the egs_phant file
+
+        :param new_file_path:
+        :param density_dict:
+        """
+
         number_of_structures = len(density_dict.keys())
         image_shape = self.image_shape
         _, mask_dict = self.get_3d_image_with_all_masks()
@@ -233,7 +248,20 @@ class Structures:
         self.make_egs_phant(new_file_path, density_dict, x_bounds / 10, y_bounds / 10, z_bounds / 10, struct_tensor,
                             density_tensor)
 
-    def make_egs_phant(self, new_file_path, density_dict, x_bounds, y_bounds, z_bounds, struct_tensor, density_tensor):
+    def make_egs_phant(self, new_file_path: str, density_dict: dict, x_bounds: list, y_bounds: list, z_bounds: list,
+                       struct_tensor: np.ndarray, density_tensor: np.ndarray) -> None:
+        """
+        This method simply writes the egs_phant file from the structures' informations.
+
+        :param new_file_path:
+        :param density_dict:
+        :param x_bounds:
+        :param y_bounds:
+        :param z_bounds:
+        :param struct_tensor:
+        :param density_tensor:
+        :return:
+        """
         number_of_structures = len(density_dict.keys())
         image_shape = self.image_shape
         vocab_file = open(new_file_path, "w")
@@ -291,10 +319,12 @@ class Structures:
 
         vocab_file.close()
 
-    def generate_x_y_and_z_list_of_voxel_boundaries(self):
+    def generate_x_y_and_z_list_of_voxel_boundaries(self) -> Tuple[list, list, list]:
         """
-        Ref is the patient coordinates
-        :return:
+        This methods generates the upper and lower bounds of every voxels in x y and z axis.
+        Reference point is the patient coordinates and values are in mm
+
+        :return: the three list of voxel bounds in x y and z.
         """
         spacing_x = self.x_y_z_spacing[2]
         spacing_y = self.x_y_z_spacing[1]
@@ -310,7 +340,16 @@ class Structures:
 
         return x_bounds, y_bounds, z_bounds
 
-    def add_mask_from_3d_array(self, mask_3d, roi_name, observation_label):
+    def add_mask_from_3d_array(self, mask_3d: np.ndarray, roi_name: str, observation_label: str) -> None:
+        """
+        This method allows to add a contour which was not originally in the DICOM.
+        To do so, this method takes the 3d mask array (which has to be the same dimension as the corresponding 3d image),
+        the roi name and the observation label to generate a new Mask object that will be added to the list_of_masks
+
+        :param mask_3d: 3d array with the 3d image size
+        :param roi_name:
+        :param observation_label:
+        """
         path_to_dicom = find_instance_in_folder(self.rt_struct_uid, self.study_folder)
         json_dicom = pydicom.dcmread(path_to_dicom).to_json_dict()
         uid_dict = self.rebuild_image_references_dict(json_dicom)

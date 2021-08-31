@@ -86,7 +86,7 @@ class LDRBrachyPlan:
         if not self.structures_are_built:
             self.extract_structures(study_folder)
 
-        x_y_z_spacing, x_y_z_origin, x_y_rotation_vectors = self.structures.x_y_z_spacing, self.structures.x_y_z_origin,\
+        x_y_z_spacing, x_y_z_origin, x_y_rotation_vectors = self.structures.x_y_z_spacing, self.structures.x_y_z_origin, \
                                                             self.structures.x_y_z_rotation_vectors
 
         pos_in_pixels = convert_real_coord_to_pixel_coord(self.list_of_sources[0].positions.copy(), x_y_z_spacing,
@@ -126,7 +126,7 @@ class LDRBrachyPlan:
                     test_d_sqared = ((index_grid[1] - thoeritical_x + i) * x_y_z_spacing[2]) ** 2 + (
                             (index_grid[0] - theoretical_y + j) * x_y_z_spacing[1]) ** 2
                     t_min_z, t_max_z, t_kills = optimize_kills_on_number_of_slices(calcification_mask,
-                                                                                   test_d_sqared < r**2, 3,
+                                                                                   test_d_sqared < r ** 2, 3,
                                                                                    theoretical_slice)
                     if t_kills > kills:
                         min_z, max_z, kills = t_min_z, t_max_z, t_kills
@@ -139,7 +139,7 @@ class LDRBrachyPlan:
             min_index, max_index, d_sqared = optimize_kills_on_y_x_and_z(calcification_mask, 5, pos_in_pixels[i, 2],
                                                                          pos_in_pixels[i, 0], pos_in_pixels[i, 1])
             calcification_mask[min_index: max_index, :, :] = calcification_mask[min_index:max_index, :, :] * (
-                        r**2 < d_sqared)
+                    r ** 2 < d_sqared)
 
         return calcification_mask
 
@@ -187,7 +187,4 @@ class Sources:
             vocab_file.write(f"rotation = {orientation[i, 0]} {orientation[i, 1]} {orientation[i, 2]} \n")
             vocab_file.write(":stop transformation:\n\n")
 
-
         vocab_file.close()
-
-
