@@ -1,6 +1,6 @@
 class Dosimetry:
     """
-    This class
+    This class represent the clinical dosimetry stored in the DICOM RTDOSE file.
     """
     def __init__(self, rt_dose_uid, dose_data, dose_units, image_position_in_patient, patient_orientation,
                  dose_grid_shape, pixel_spacing, dose_grid_scaling, rt_plan_uid, rt_struct_uid, list_of_dvh):

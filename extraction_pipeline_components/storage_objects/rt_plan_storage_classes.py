@@ -82,7 +82,23 @@ class LDRBrachyPlan:
     def get_structures(self):
         return self.structures
 
-    def segmenting_calcification(self, h, r, study_folder):
+    def segmenting_calcification(self, h: float, r: float, study_folder: str) -> np.ndarray:
+        """
+        First version of the calcification segmentation algorithm. It is incomplete and will
+        most likely be modified in the futere.
+
+        This method first uses cylindrical mask to remove all the sources from the CT. To do so,
+        this method will try to optimize the removal of sources pixels by placing a cylinder mask of
+        h = height and r = radius at each source position.
+
+        Afterwards, calcifications are segmented by a threshold of 348 HU, this value was selected using
+        the Ca (20%) density of 1.4480g/cm3 converted using the CT calibration curves for the test cases.
+
+        :param h:
+        :param r:
+        :param study_folder:
+        :return: The 3d mask associated with the calcification
+        """
         if not self.structures_are_built:
             self.extract_structures(study_folder)
 
@@ -96,8 +112,18 @@ class LDRBrachyPlan:
         image, masks = self.structures.get_3d_image_with_all_masks()
         calcification_mask = (348 < image) * masks["Target"]
 
-        def optimize_kills_on_number_of_slices(initial_mask, slice_mask, nb_slice_desired, theoretical_slice):
-            # with pm 1 for pixel incertainty
+        def optimize_kills_on_number_of_slices(initial_mask: np.ndarray, slice_mask: np.ndarray,
+                                               nb_slice_desired: int, theoretical_slice: int):
+            """
+            This method verifies if the cylinder mask covers a bigger volume of the source if
+            we raise or lower the mask of one voxel
+
+            :param initial_mask:
+            :param slice_mask:
+            :param nb_slice_desired:
+            :param theoretical_slice:
+            :return:
+            """
             stack_of_slices = slice_mask.copy()
             for i in range(0, nb_slice_desired - 1):
                 stack_of_slices = np.hstack([stack_of_slices, slice_mask])
@@ -115,7 +141,17 @@ class LDRBrachyPlan:
 
         def optimize_kills_on_y_x_and_z(initial_mask, nb_slice_desired, theoretical_slice, thoeritical_x,
                                         theoretical_y):
+            """
+            This method verifies if the cylinder mask covers a bigger volume of the source if
+            we move it by one voxel in the x and/or the y axis
 
+            :param initial_mask:
+            :param nb_slice_desired:
+            :param theoretical_slice:
+            :param thoeritical_x:
+            :param theoretical_y:
+            :return:
+            """
             d_sqared = ((index_grid[1] - thoeritical_x) * x_y_z_spacing[2]) ** 2 + (
                     (index_grid[0] - theoretical_y) * x_y_z_spacing[1]) ** 2
 
@@ -147,6 +183,21 @@ class LDRBrachyPlan:
 class Sources:
     def __init__(self, source_isotope_name, air_kerma_rate, ref_date, ref_time, material, source_type,
                  source_manufacturer, source_diameter, source_lenght, positions, orientations, parent_plan):
+        """
+
+        :param source_isotope_name:
+        :param air_kerma_rate:
+        :param ref_date:
+        :param ref_time:
+        :param material:
+        :param source_type:
+        :param source_manufacturer:
+        :param source_diameter:
+        :param source_lenght:
+        :param positions:
+        :param orientations:
+        :param parent_plan:
+        """
         self.source_isotope_name = source_isotope_name
         self.air_kerma_rate = air_kerma_rate
         self.ref_date = ref_date
@@ -172,11 +223,16 @@ class Sources:
     def get_source_spectrum(self):
         pass
 
-    def generate_transformation_file_for_sources(self, new_file_path):
+    def generate_transformation_file_for_sources(self, new_file_path: str) -> None:
+        """
+        This method generates egs_brachy transformation file from
+        the sources positions.
+
+        :param new_file_path:
+        :return:
+        """
         pos = self.positions / 10
-        print(pos)
         orientation = self.orientations
-        print(orientation.shape)
         if orientation.shape[1] == 0:
             orientation = np.zeros((pos.shape[0], pos.shape[1]))
 
