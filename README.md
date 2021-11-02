@@ -244,4 +244,18 @@ for patient_folder in os.listdir(DICOM_PATH):
 
 ## Postprocessing pipeline
 
-Not developped yet
+### Information Extraction
+
+#### Contour Extraction As Mask
+
+#### Source Information Extraction
+
+#### Dosimetry Extraction
+
+### Information usage
+
+#### RT STRUCT Storage classes
+
+#### RT PLAN Storage classes
+
+#### RT DOSE Storage classes

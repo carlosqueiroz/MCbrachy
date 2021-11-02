@@ -6,13 +6,13 @@ from preprocessing_pipeline_components import LDR_brachy_case_verification as LD
 from root import ROOT
 from unittest.mock import patch
 
-test_log_filename = os.path.join(ROOT, r'logs\test_logs.logs')
+test_log_filename = os.path.join(ROOT, "logs", "test_logs")
 logging.basicConfig(filename=test_log_filename,
                     format='%(asctime)s [%(levelname)s, %(module)s.%(funcName)s]: %(message)s',
                     filemode='w+',
                     level=logging.DEBUG)
 
-data_folder = os.path.join(ROOT, r'tests\test_data')
+data_folder = os.path.join(ROOT, "tests", "test_data")
 
 
 class TestVerifyIfBrachyTreatmentType(unittest.TestCase):
