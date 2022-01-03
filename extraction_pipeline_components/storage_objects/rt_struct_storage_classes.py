@@ -376,7 +376,8 @@ class Structures:
                 mask=np.swapaxes(np.swapaxes(np.flip(mask_3d, 0), 1, 2), 0, 2),
                 name=roi_name,
                 description=observation_label,
-                use_media_storage=False
+                use_media_storage=False,
+                roi_generation_algorithm=segmentation_method
             )
 
             rtstruct.save(path_to_rt_struct)
