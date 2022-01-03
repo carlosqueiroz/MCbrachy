@@ -65,6 +65,35 @@ def find_instance_in_folder(sop_instance_UID: str, path_to_folder: str) -> str o
     return None
 
 
+def find_modality_in_folder(modality: str, path_to_folder: str) -> str or None:
+    """
+    This method will look for a specific instance in à specified folder.
+    The provided folder can also contain sub-folders that will also
+    be explored recursively.
+
+    :param modality: modality desired
+    :param path_to_folder: direct folder of upper lower folder to look into
+           in order to find the instance
+
+    :return: the str path of the corresponding instance
+    """
+    for sub_items in os.listdir(path_to_folder):
+        path_to_item = os.path.join(path_to_folder, sub_items)
+        if os.path.isdir(path_to_item):
+            found_file = find_modality_in_folder(modality, path_to_item)
+            if found_file is not None:
+                return found_file
+
+        if path_to_item.endswith(".dcm"):
+            dicom = pydicom.dcmread(path_to_item)
+            if dicom.Modality == modality:
+                return path_to_item
+
+    logging.warning(f"Instance with modality {modality} not found in folder {path_to_folder}")
+    return None
+
+
+
 def convert_real_coord_to_pixel_coord(array_x_y_z_coord: np.ndarray,
                                       x_y_z_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
                                       x_y_rotation_vectors: List[float]) -> np.ndarray:

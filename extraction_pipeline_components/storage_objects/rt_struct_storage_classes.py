@@ -1,11 +1,12 @@
 import os
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Union, Any
 
 import numpy as np
 import pydicom
+from rt_utils import RTStructBuilder
 
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
-    generate_3d_image_from_series
+    generate_3d_image_from_series, find_modality_in_folder
 
 
 class SliceMask:
@@ -319,7 +320,7 @@ class Structures:
 
         vocab_file.close()
 
-    def generate_x_y_and_z_list_of_voxel_boundaries(self) -> Tuple[list, list, list]:
+    def generate_x_y_and_z_list_of_voxel_boundaries(self) -> Tuple[Union[float, Any], Union[float, Any], float]:
         """
         This methods generates the upper and lower bounds of every voxels in x y and z axis.
         Reference point is the patient coordinates and values are in mm
@@ -340,12 +341,15 @@ class Structures:
 
         return x_bounds, y_bounds, z_bounds
 
-    def add_mask_from_3d_array(self, mask_3d: np.ndarray, roi_name: str, observation_label: str) -> None:
+    def add_mask_from_3d_array(self, mask_3d: np.ndarray, roi_name: str, observation_label: str,
+                               segmentation_method: int, add_to_original_rt_struct_file=False) -> None:
         """
         This method allows to add a contour which was not originally in the DICOM.
         To do so, this method takes the 3d mask array (which has to be the same dimension as the corresponding 3d image),
         the roi name and the observation label to generate a new Mask object that will be added to the list_of_masks
 
+        :param segmentation_method: 2 = manual, 1= semi-automatic, 0=automatic
+        :param add_to_original_rt_struct_file:
         :param mask_3d: 3d array with the 3d image size
         :param roi_name:
         :param observation_label:
@@ -359,6 +363,24 @@ class Structures:
 
         self.add_masks(new_mask)
 
+        if add_to_original_rt_struct_file:
+            path_to_rt_struct = find_instance_in_folder(self.rt_struct_uid, self.study_folder)
+            path_to_a_ct_file = find_modality_in_folder("CT", self.study_folder)
+            path_to_ct_folder = os.path.dirname(path_to_a_ct_file)
+            rtstruct = RTStructBuilder.create_from(
+                dicom_series_path=path_to_ct_folder,
+                rt_struct_path=path_to_rt_struct,
+                use_media_storage=False,
+            )
+            rtstruct.add_roi(
+                mask=np.swapaxes(np.swapaxes(np.flip(mask_3d, 0), 1, 2), 0, 2),
+                name=roi_name,
+                description=observation_label,
+                use_media_storage=False
+            )
+
+            rtstruct.save(path_to_rt_struct)
+
     @staticmethod
     def rebuild_image_references_dict(open_dicom_as_json: dict) -> dict:
         """
@@ -369,7 +391,8 @@ class Structures:
         :return: the dictionary having slice number as key and uid as value
         """
         all_images_uids = \
-        open_dicom_as_json["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
+            open_dicom_as_json["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"][
+                "Value"]
 
         ref_images_dict = {}
         if "00081160" not in all_images_uids[0].keys():
@@ -384,5 +407,3 @@ class Structures:
                 ref_images_dict[it] = str(elements["00081155"]["Value"][0])
 
         return ref_images_dict
-
-

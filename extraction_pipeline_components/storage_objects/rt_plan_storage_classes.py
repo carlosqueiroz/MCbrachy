@@ -177,7 +177,7 @@ class LDRBrachyPlan:
             calcification_mask[min_index: max_index, :, :] = calcification_mask[min_index:max_index, :, :] * (
                     r ** 2 < d_sqared)
 
-        return calcification_mask
+        return calcification_mask.astype(bool)
 
 
 class Sources:

@@ -27,7 +27,6 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
         if open_dicom.Modality == "RTSTRUCT":
             rt_struct_uid = str(open_dicom.SOPInstanceUID)
             image_ref_dict = build_image_references_dict(open_dicom.to_json_dict())
-
             path_to_reference_frame = find_instance_in_folder(image_ref_dict[1], study_folder)
 
             if path_to_reference_frame is None:
@@ -43,7 +42,6 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
             contours_context_dict = extract_contour_context_info(json_version_dicom)
             contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, x_y_z_spacing,
                                                                      x_y_z_origin, x_y_z_rotation_vectors, image_ref_dict)
-
             list_of_masks = []
             for contours in contours_and_image_dict.keys():
                 roi_name = contours_context_dict[contours]['ROIName']
@@ -127,6 +125,8 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
         slices_dict = {}
         try:
             for slices in roi["30060040"]["Value"]:
+                if int(slices["30060046"]["Value"][0]) < 3:
+                    continue
                 contour_data = np.asarray(slices["30060050"]["Value"], dtype=np.float64)
                 data_array = contour_data.reshape((contour_data.shape[0] // 3, 3))
                 slice_z = convert_real_coord_to_pixel_coord(np.asarray([data_array[0]]), x_y_z_spacing,
@@ -135,8 +135,8 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
                 pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, x_y_z_spacing,
                                                                                      x_y_z_origin,
                                                                                      x_y_z_rotation_vectors)
-
                 mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
+
                 if "30060016" in slices.keys():
                     image_uid = slices["30060016"]["Value"][0]["00081155"]["Value"][0]
 
@@ -144,7 +144,10 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
                     image_uid = ref_images_dict[slice_z]
 
                 image = image_uid
-                slices_dict[slice_z] = {"mask": mask, "image_uid": image}
+                if slice_z in slices_dict.keys():
+                    slices_dict[slice_z]["mask"] = slices_dict[slice_z]["mask"] + mask
+                else:
+                    slices_dict[slice_z] = {"mask": mask, "image_uid": image}
 
             roi_contours_dict[roi_number] = slices_dict
 
