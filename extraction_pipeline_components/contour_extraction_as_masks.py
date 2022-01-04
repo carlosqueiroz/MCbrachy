@@ -32,15 +32,15 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
             if path_to_reference_frame is None:
                 raise TypeError
 
-            img_shape_2d, x_y_z_spacing, \
+            img_shape_2d, z_y_x_spacing, \
             x_y_z_origin, x_y_z_rotation_vectors = extract_positionning_informations(path_to_reference_frame)
             img_shape = len(image_ref_dict.keys()), img_shape_2d[0], img_shape_2d[1]
 
-            structure = Structures(rt_struct_uid, img_shape, x_y_z_spacing, x_y_z_origin, x_y_z_rotation_vectors,
+            structure = Structures(rt_struct_uid, img_shape, z_y_x_spacing, x_y_z_origin, x_y_z_rotation_vectors,
                                    list_of_masks=[], study_folder=study_folder)
             json_version_dicom = open_dicom.to_json_dict()
             contours_context_dict = extract_contour_context_info(json_version_dicom)
-            contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, x_y_z_spacing,
+            contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, z_y_x_spacing,
                                                                      x_y_z_origin, x_y_z_rotation_vectors, image_ref_dict)
             list_of_masks = []
             for contours in contours_and_image_dict.keys():
@@ -102,7 +102,7 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct: dict) -> dict:
 
 
 def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape: Tuple[int, int, int],
-                                   x_y_z_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
+                                   z_y_x_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
                                    x_y_z_rotation_vectors: List[float], ref_images_dict) -> dict:
     """
     This method will use the rt struct json dict to extrac all of the masks and
@@ -111,7 +111,7 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
     :param ref_images_dict: dictionary of all the images uids
     :param json_dict_of_dicom_rt_struct: json_dit associated to the original Dicom
     :param img_shape: shape of the 3d image
-    :param x_y_z_spacing: spacial dimension of a voxel
+    :param z_y_x_spacing: spacial dimension of a voxel
     :param x_y_z_origin: origin of the image in patient coordinates
     :param x_y_z_rotation_vectors: image axes in the patient coordinates
 
@@ -129,10 +129,10 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
                     continue
                 contour_data = np.asarray(slices["30060050"]["Value"], dtype=np.float64)
                 data_array = contour_data.reshape((contour_data.shape[0] // 3, 3))
-                slice_z = convert_real_coord_to_pixel_coord(np.asarray([data_array[0]]), x_y_z_spacing,
+                slice_z = convert_real_coord_to_pixel_coord(np.asarray([data_array[0]]), z_y_x_spacing,
                                                             x_y_z_origin, x_y_z_rotation_vectors)[0, 2]
 
-                pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, x_y_z_spacing,
+                pixel_tuples = convert_real_coordinates_into_pixel_tuple_coordinates(data_array, z_y_x_spacing,
                                                                                      x_y_z_origin,
                                                                                      x_y_z_rotation_vectors)
                 mask = produce_mask_from_contour_coord(pixel_tuples, (img_shape[1], img_shape[2]))
@@ -158,7 +158,7 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
 
 
 def convert_real_coordinates_into_pixel_tuple_coordinates(array_x_y_z_coord: np.ndarray,
-                                                          x_y_z_spacing, x_y_z_origin,
+                                                          z_y_x_spacing, x_y_z_origin,
                                                           x_y_z_rotation_vectors) -> List[Tuple[int, int]]:
     """
     This method will convert the array of patient coordinates into
@@ -166,13 +166,13 @@ def convert_real_coordinates_into_pixel_tuple_coordinates(array_x_y_z_coord: np.
     are ignored because this method is simply used before the produce_mask_from_contour_coord.
 
     :param array_x_y_z_coord: the array containing all the x y z coordinates
-    :param x_y_z_spacing: spacial dimension of a voxel
+    :param z_y_x_spacing: spacial dimension of a voxel
     :param x_y_z_origin: origin of the image in patient coordinates
     :param x_y_z_rotation_vectors: image axes in the patient coordinates
 
     :return: the list of the tuples associated to each contour point
     """
-    pixel_coodinates = convert_real_coord_to_pixel_coord(array_x_y_z_coord, x_y_z_spacing, x_y_z_origin,
+    pixel_coodinates = convert_real_coord_to_pixel_coord(array_x_y_z_coord, z_y_x_spacing, x_y_z_origin,
                                                          x_y_z_rotation_vectors)
     pixel_coords = [(x, y) for x, y, _ in pixel_coodinates]
 

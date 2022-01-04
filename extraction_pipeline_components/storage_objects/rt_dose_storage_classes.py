@@ -1,7 +1,11 @@
+from simulation_files.topas_file_templates.scorer_definition import CLINICAL_DOSE_GRID
+
+
 class Dosimetry:
     """
     This class represent the clinical dosimetry stored in the DICOM RTDOSE file.
     """
+
     def __init__(self, rt_dose_uid, dose_data, dose_units, image_position_in_patient, patient_orientation,
                  dose_grid_shape, pixel_spacing, dose_grid_scaling, rt_plan_uid, rt_struct_uid, list_of_dvh):
         """
@@ -44,11 +48,28 @@ class Dosimetry:
         else:
             self.list_of_dvh.append(dvh)
 
+    def generate_topas_scorer(self, output_path):
+        voxel_size_z, voxel_size_y, voxel_size_x = self.pixel_spacing
+        nb_z, nb_y, nb_x = self.dose_grid_shape
+        originx = self.image_position_in_patient[0]
+        originy = self.image_position_in_patient[1]
+        originz = self.image_position_in_patient[2]
+        transx = originx - (nb_x * voxel_size_x - voxel_size_x) / 2
+        transy = originy - (nb_y * voxel_size_y - voxel_size_y) / 2
+        transz = -originz - (nb_z * voxel_size_z - voxel_size_z) / 2
+
+        return CLINICAL_DOSE_GRID.substitute(input_directory=output_path, transx=transx,
+                                             transy=transy, tranz=transz, rotx="0.", roty="0.", rotz="0.",
+                                             nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
+                                             voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x,
+                                             voxel_size_y=voxel_size_y)
+
 
 class DVHistogram:
     """
     This class
     """
+
     def __init__(self, reference_roi_number, dose_units, dvh_dose_scaling, dvh_volume_units, dvh_number_of_bins,
                  dvh_data, dvh_max, dvh_min, dvh_mean, parent_dosi):
         """

@@ -1,12 +1,16 @@
 import os
+from root import ROOT
 from typing import Tuple, List, Dict, Union, Any
-
+import ntpath
 import numpy as np
 import pydicom
+from simulation_files.topas_file_templates.medium_definition import TG186_PATIENT
 from rt_utils import RTStructBuilder
 
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series, find_modality_in_folder
+
+default_path_to_3d_index_mapping = os.path.join(ROOT, r"simulation_files\3d_index_mapping", "3d_index_mapping")
 
 
 class SliceMask:
@@ -107,21 +111,34 @@ class Mask:
         path_to_image = find_instance_in_folder(last_image_uid, self.parent_structures.study_folder)
         series_folder = os.path.dirname(path_to_image)
         image = generate_3d_image_from_series(self.parent_structures.image_shape, series_folder,
-                                              self.parent_structures.x_y_z_spacing, self.parent_structures.x_y_z_origin,
+                                              self.parent_structures.z_y_x_spacing, self.parent_structures.x_y_z_origin,
                                               self.parent_structures.x_y_z_rotation_vectors)
 
         return image, initial_mask
 
+    def get_3d_mask(self) -> np.ndarray:
+        """
+        This method will fuse all the slices into one 3d mask with one 3d image.
+
+
+        :return: the 3d image and the 3d mask array
+        """
+        initial_mask = np.zeros(self.parent_structures.image_shape)
+        for slices in self.list_mask_slices:
+            initial_mask[slices.slice_number, :, :] = slices.mask_array
+
+        return initial_mask
+
 
 class Structures:
     def __init__(self, rt_struct_uid: str, image_shape: Tuple[int, int, int],
-                 x_y_z_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
+                 z_y_x_spacing: Tuple[float, float, float], x_y_z_origin: List[float],
                  x_y_z_rotation_vectors: List[float], list_of_masks, study_folder: str):
         """
         This object represents all the contours associated to a 3d image.
 
         :param image_shape: shape of the 3d image
-        :param x_y_z_spacing: spacial dimension of a voxel
+        :param z_y_x_spacing: spacial dimension of a voxel
         :param x_y_z_origin: origin of the image in patient coordinates
         :param x_y_z_rotation_vectors: image axes in the patient coordinates
         :param list_of_masks: list of Mask object associated to each contour
@@ -129,7 +146,7 @@ class Structures:
         """
         self.rt_struct_uid = rt_struct_uid
         self.image_shape = image_shape
-        self.x_y_z_spacing = x_y_z_spacing
+        self.z_y_x_spacing = z_y_x_spacing
         self.x_y_z_origin = x_y_z_origin
         self.x_y_z_rotation_vectors = x_y_z_rotation_vectors
         self.list_of_masks = list_of_masks
@@ -210,7 +227,7 @@ class Structures:
         path_to_image = find_instance_in_folder(last_image_uid, self.study_folder)
         series_folder = os.path.dirname(path_to_image)
         image = generate_3d_image_from_series(self.image_shape, series_folder,
-                                              self.x_y_z_spacing, self.x_y_z_origin,
+                                              self.z_y_x_spacing, self.x_y_z_origin,
                                               self.x_y_z_rotation_vectors)
 
         return image, mask_dict
@@ -327,9 +344,9 @@ class Structures:
 
         :return: the three list of voxel bounds in x y and z.
         """
-        spacing_x = self.x_y_z_spacing[2]
-        spacing_y = self.x_y_z_spacing[1]
-        spacing_z = self.x_y_z_spacing[0]
+        spacing_z = self.z_y_x_spacing[2]
+        spacing_y = self.z_y_x_spacing[1]
+        spacing_x = self.z_y_x_spacing[0]
         origin_x = self.x_y_z_origin[0] - spacing_x / 2
         origin_y = self.x_y_z_origin[1] - spacing_y / 2
         origin_z = self.x_y_z_origin[2] - spacing_z / 2
@@ -381,6 +398,63 @@ class Structures:
             )
 
             rtstruct.save(path_to_rt_struct)
+
+    def generate_3d_index_mapping_for_structures(self, list_of_desired_structures, save_to_file=False,
+                                                 path_to_save_to=default_path_to_3d_index_mapping):
+        """
+
+        :param save_to_file:
+        :param path_to_save_to:
+        :param list_of_desired_structures:
+        :return:
+        """
+        slices, rows, columns = self.image_shape
+        new_index_3d_array = np.zeros([slices, rows, columns])
+        it = 1
+        for organs in list_of_desired_structures:
+            organ_mask = self.get_specific_mask(organs, organs)
+            binary_mask = organ_mask.get_3d_mask()
+            new_index_3d_array = np.ma.array(new_index_3d_array, mask=binary_mask).filled(it)
+            it += 1
+
+        if save_to_file:
+            new_index_3d_array.astype(np.int16).tofile(path_to_save_to)
+
+        return new_index_3d_array
+
+    def generate_topas_input_string_and_3d_mapping(self, list_of_desired_structures,
+                                                   path_to_save_to=default_path_to_3d_index_mapping):
+        voxel_size_z, voxel_size_y, voxel_size_x = self.z_y_x_spacing
+        nb_z, nb_y, nb_x = self.image_shape
+        directory = os.path.dirname(path_to_save_to)
+        file_name = ntpath.basename(path_to_save_to)
+        originx = self.x_y_z_origin[0]
+        originy = self.x_y_z_origin[1]
+        originz = self.x_y_z_origin[2]
+        transx = originx - (nb_x * voxel_size_x - voxel_size_x) /2
+        transy = originy - (nb_y * voxel_size_y - voxel_size_y) / 2
+        transz = -originz - (nb_z * voxel_size_z - voxel_size_z) / 2
+
+        tag_numbers = f"{len(list_of_desired_structures) +1} 0"
+        material_names = f"""{len(list_of_desired_structures) +1} "TG186Water" """
+
+        # TODO intégrer le vocab des contours
+        print(list_of_desired_structures)
+        topas_organ_vocab = {"prostate": "TG186Prostate"}
+
+        it = 1
+        for organs in list_of_desired_structures:
+            tag_numbers = tag_numbers + f" {it}"
+            material_names = material_names + topas_organ_vocab[organs] + " "
+
+        self.generate_3d_index_mapping_for_structures(list_of_desired_structures, save_to_file=True,
+                                                      path_to_save_to=default_path_to_3d_index_mapping)
+
+        return TG186_PATIENT.substitute(input_directory=directory, input_file_name=file_name, transx=transx,
+                                        transy=transy, tranz=transz, rotx="0.", roty="0.", rotz="0.",
+                                        nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
+                                        voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x, voxel_size_y=voxel_size_y,
+                                        tag_numbers=tag_numbers, material_names=material_names)
 
     @staticmethod
     def rebuild_image_references_dict(open_dicom_as_json: dict) -> dict:

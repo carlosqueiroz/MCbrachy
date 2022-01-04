@@ -1,16 +1,25 @@
 import logging
+import os
 
 import numpy as np
+import simulation_files.topas_file_templates.iodine125_select_seed as selectseed
+import simulation_files.topas_file_templates.physics as physics
 
 from extraction_pipeline_components.contour_extraction_as_masks import extract_masks_for_each_organs_for_each_slices
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     convert_real_coord_to_pixel_coord
 from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import Structures
+from extraction_pipeline_components.storage_objects.rt_dose_storage_classes import Dosimetry
+from extraction_pipeline_components.dosimetry_extraction import extract_dosimetry
+from root import ROOT
+
+default_path_to_3d_index_mapping = os.path.join(ROOT, r"simulation_files\3d_index_mapping", "3d_index_mapping")
+default_input_file_save_path = os.path.join(ROOT, r"simulation_files\topas_simulation_files", "simulation_input_file")
 
 
 class LDRBrachyPlan:
     def __init__(self, rt_plan_uid: str, rt_struct_uid: str, rt_dose_uid: str, rt_plan_date: str, rt_plan_time: float,
-                 list_of_sources: list = None, structures: Structures = None):
+                 list_of_sources: list = None, structures: Structures = None, dosimetry: Dosimetry = None):
         """
         This class will be used to store all the information extracted
         from a rt plan dicom. This specific class will only contain the global
@@ -37,7 +46,13 @@ class LDRBrachyPlan:
         else:
             self.structures_are_built = False
 
+        if dosimetry is not None:
+            self.dosi_is_built = True
+        else:
+            self.dosi_is_built = False
+
         self.structures = structures
+        self.dosimetry = dosimetry
         self.list_of_sources = list_of_sources
 
     def extract_structures(self, study_folder: str) -> None:
@@ -60,11 +75,25 @@ class LDRBrachyPlan:
             structures = extract_masks_for_each_organs_for_each_slices(rt_struct_path, study_folder)
             self.structures = structures
             self.structures_are_built = True
+        else:
+            logging.warning("Structures are already built")
 
-        logging.warning("Structures are already built")
+    def extract_dosimetry(self, study_folder: str):
+        """
+        :param study_folder: path to the folder containing the study
+        """
+        if not self.dosi_is_built:
+            rt_dose_path = find_instance_in_folder(self.rt_dose_uid, study_folder)
+            if rt_dose_path is None:
+                logging.warning(f"RT DOSE {self.rt_dose_uid} not found. The dosimetry won't be built")
+                self.dosimetry = None
 
-    def extract_dosimetry(self):
-        raise NotImplementedError
+            dosimetry = extract_dosimetry(rt_dose_path)
+            self.dosimetry = dosimetry
+            self.dosi_is_built = True
+
+        else:
+            logging.warning("Dosimetry is already built")
 
     def add_sources(self, sources) -> None:
         """
@@ -81,6 +110,9 @@ class LDRBrachyPlan:
 
     def get_structures(self):
         return self.structures
+
+    def get_dosimetry(self):
+        return self.dosimetry
 
     def segmenting_calcification(self, h: float, r: float, study_folder: str) -> np.ndarray:
         """
@@ -102,10 +134,10 @@ class LDRBrachyPlan:
         if not self.structures_are_built:
             self.extract_structures(study_folder)
 
-        x_y_z_spacing, x_y_z_origin, x_y_rotation_vectors = self.structures.x_y_z_spacing, self.structures.x_y_z_origin, \
+        z_y_x_spacing, x_y_z_origin, x_y_rotation_vectors = self.structures.z_y_x_spacing, self.structures.x_y_z_origin, \
                                                             self.structures.x_y_z_rotation_vectors
 
-        pos_in_pixels = convert_real_coord_to_pixel_coord(self.list_of_sources[0].positions.copy(), x_y_z_spacing,
+        pos_in_pixels = convert_real_coord_to_pixel_coord(self.list_of_sources[0].positions.copy(), z_y_x_spacing,
                                                           x_y_z_origin,
                                                           x_y_rotation_vectors)
 
@@ -152,15 +184,15 @@ class LDRBrachyPlan:
             :param theoretical_y:
             :return:
             """
-            d_sqared = ((index_grid[1] - thoeritical_x) * x_y_z_spacing[2]) ** 2 + (
-                    (index_grid[0] - theoretical_y) * x_y_z_spacing[1]) ** 2
+            d_sqared = ((index_grid[1] - thoeritical_x) * z_y_x_spacing[2]) ** 2 + (
+                    (index_grid[0] - theoretical_y) * z_y_x_spacing[1]) ** 2
 
             min_z, max_z, kills = optimize_kills_on_number_of_slices(initial_mask, d_sqared < 25, nb_slice_desired,
                                                                      theoretical_slice)
             for i in range(-1, 2):
                 for j in range(-1, 2):
-                    test_d_sqared = ((index_grid[1] - thoeritical_x + i) * x_y_z_spacing[2]) ** 2 + (
-                            (index_grid[0] - theoretical_y + j) * x_y_z_spacing[1]) ** 2
+                    test_d_sqared = ((index_grid[1] - thoeritical_x + i) * z_y_x_spacing[2]) ** 2 + (
+                            (index_grid[0] - theoretical_y + j) * z_y_x_spacing[1]) ** 2
                     t_min_z, t_max_z, t_kills = optimize_kills_on_number_of_slices(calcification_mask,
                                                                                    test_d_sqared < r ** 2, 3,
                                                                                    theoretical_slice)
@@ -178,6 +210,29 @@ class LDRBrachyPlan:
                     r ** 2 < d_sqared)
 
         return calcification_mask.astype(bool)
+
+    def generate_topas_seed_string(self, photon_per_seed: int):
+        all_sources_string = ""
+        for sources in self.list_of_sources:
+            all_sources_string = all_sources_string + sources.generate_sources_topas_string(photon_per_seed) + "\n\n"
+
+        return all_sources_string + physics.LDR_BRACHY_PHYSICS
+
+    def generate_whole_topas_input_file(self, photon_per_seed: int, list_of_desired_structures, output_path,
+                                        path_to_save_input_file=default_input_file_save_path,
+                                        path_to_save_index=default_path_to_3d_index_mapping, add=""):
+        if self.dosi_is_built and self.structures_are_built:
+            full_input_file = self.generate_topas_seed_string(photon_per_seed) + "\n\n"
+            full_input_file += self.structures.generate_topas_input_string_and_3d_mapping(list_of_desired_structures,
+                                                                                          path_to_save_index) + "\n\n"
+            full_input_file += self.dosimetry.generate_topas_scorer(output_path) + "\n\n" + add
+
+            text_file = open(path_to_save_input_file, "w")
+            text_file.write(full_input_file)
+            text_file.close()
+
+        else:
+            logging.warning("Dosimetry or Structures not built")
 
 
 class Sources:
@@ -211,18 +266,6 @@ class Sources:
         self.positions = positions
         self.orientations = orientations
 
-    def get_seperated_seed_positions(self):
-        pass
-
-    def convert_seed_positions_to_pixel(self):
-        pass
-
-    def get_actual_source_model(self):
-        pass
-
-    def get_source_spectrum(self):
-        pass
-
     def generate_transformation_file_for_sources(self, new_file_path: str) -> None:
         """
         This method generates egs_brachy transformation file from
@@ -244,3 +287,33 @@ class Sources:
             vocab_file.write(":stop transformation:\n\n")
 
         vocab_file.close()
+
+    def generate_sources_topas_string(self, photon_per_seed):
+        """
+
+        :param photon_per_seed:
+        :return:
+        """
+        if self.source_manufacturer == "Nucletron B.V." and self.source_isotope_name == "I-125":
+            sources_topas_string = selectseed.HEADER + "\n\n" + selectseed.MATERIALS
+            for index in range(self.positions.shape[0]):
+                sources_topas_string += "\n\n" + selectseed.SEEDS.substitute(index=index,
+                                                                             photon_per_seed=photon_per_seed,
+                                                                             position_x=self.positions[index][0],
+                                                                             position_y=self.positions[index][1],
+                                                                             position_z=self.positions[index][2])
+
+            return sources_topas_string
+
+        else:
+            raise NotImplementedError
+
+
+
+
+
+
+
+
+
+
