@@ -69,8 +69,6 @@ def get_aguments(argv):
 if __name__ == "__main__":
     PATIENTS_DIRECTORY, ORGANS_TO_USE, RECALCULATION_ALGORITHM, RESTRUCTURING_FOLDERS, \
     SEGMENTING_CALCIFICATIONS = get_aguments(sys.argv[1:])
-    print(PATIENTS_DIRECTORY, ORGANS_TO_USE, RECALCULATION_ALGORITHM, RESTRUCTURING_FOLDERS, \
-    SEGMENTING_CALCIFICATIONS)
     if PATIENTS_DIRECTORY is None:
         print('automatic_recalculation_workflow.py -i <inputfolder> -a <algorithm> -r <restructure>')
         sys.exit()
@@ -103,11 +101,11 @@ if __name__ == "__main__":
             elif RECALCULATION_ALGORITHM == "topas":
                 photon_per_seed = 100
                 index_saving_path = os.path.join(ROOT, "simulation_files/3d_index_mapping",
-                                                 f"mapping_{patient}_{studies}")
+                                                 f"mapping_{patient}_{studies}.bin")
                 input_saving_path = os.path.join(ROOT, "simulation_files/topas_simulation_files",
-                                                 f"input_{patient}_{studies}")
+                                                 f"input_{patient}_{studies}.txt")
                 output_saving_path = os.path.join(ROOT, "simulation_files/topas_simulation_files",
-                                                  f"dose_{patient}_{studies}")
+                                                  f"dose_{patient}_{studies}.dcm")
                 plan.generate_whole_topas_input_file(100, ORGANS_TO_USE, output_saving_path, input_saving_path,
                                                      index_saving_path, add="i:Ts/NumberOfThreads = 7")
                 simulation = subprocess.Popen(fr"C:\Users\osamu\AppData\Local\Packages\CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc\LocalState\rootfs\home\sam23\topas\bin\topas {input_saving_path}")

@@ -31,8 +31,6 @@ iv:Gr/Color/transparentgray2 = 4 200 200 200 100
 """
 
 SEEDS = Template("""
-ic:So/ActiveSource${index}/NumberOfHistoriesInRun    = ${photon_per_seed}
-
 s:Ge/SelectSeed${index}/Type              = "Group"
 s:Ge/SelectSeed${index}/Parent            = "World"
 b:Ge/SelectSeed${index}/IsParallel        = "True"
@@ -44,7 +42,7 @@ d:Ge/SelectSeed${index}/TransZ            = ${position_z} mm
 ##### TITANIUM TUBE
 s:Ge/SelectSeedTitaniumTube${index}/Type         = "TsCylinder"
 s:Ge/SelectSeedTitaniumTube${index}/Material     = "MatTitaniumTube"
-s:Ge/SelectSeedTitaniumTube${index}/Parent       = "SelectSeedSeed${index}"
+s:Ge/SelectSeedTitaniumTube${index}/Parent       = "SelectSeed${index}"
 d:Ge/SelectSeedTitaniumTube${index}/RMin         = 0 mm
 d:Ge/SelectSeedTitaniumTube${index}/RMax         = 0.4 mm
 d:Ge/SelectSeedTitaniumTube${index}/HL           = 1.85 mm
@@ -58,7 +56,7 @@ s:Ge/SelectSeedTitaniumTube${index}/ParallelWorldName = "SeedsWorld"
 ##### TITANIUM CAP L
 s:Ge/SelectSeedTitaniumCapL${index}/Type         = "TsSphere"
 s:Ge/SelectSeedTitaniumCapL${index}/Material     = "MatTitaniumTube"
-s:Ge/SelectSeedTitaniumCapL${index}/Parent       = "SelectSeedSeed${index}"
+s:Ge/SelectSeedTitaniumCapL${index}/Parent       = "SelectSeed${index}"
 d:Ge/SelectSeedTitaniumCapL${index}/RMin         = 0. mm
 d:Ge/SelectSeedTitaniumCapL${index}/RMax         = 0.4 mm
 d:Ge/SelectSeedTitaniumCapL${index}/SPhi         = 0. deg
@@ -74,7 +72,7 @@ s:Ge/SelectSeedTitaniumCapL${index}/ParallelWorldName = "SeedsWorld"
 ##### TITANIUM CAP R
 s:Ge/SelectSeedTitaniumCapR${index}/Type         = "TsSphere"
 s:Ge/SelectSeedTitaniumCapR${index}/Material     = "MatTitaniumTube"
-s:Ge/SelectSeedTitaniumCapR${index}/Parent       = "SelectSeedSeed${index}"
+s:Ge/SelectSeedTitaniumCapR${index}/Parent       = "SelectSeed${index}"
 d:Ge/SelectSeedTitaniumCapR${index}/RMin         = 0. mm
 d:Ge/SelectSeedTitaniumCapR${index}/RMax         = 0.4 mm
 d:Ge/SelectSeedTitaniumCapR${index}/SPhi         = 0. deg
@@ -128,18 +126,18 @@ s:Ge/SelectSeedSilverRod${index}/DrawingStyle = "Solid"
 b:Ge/SelectSeedSilverRod${index}/IsParallel        = "True"
 s:Ge/SelectSeedSilverRod${index}/ParallelWorldName = "SeedsWorld"
 
-s:So/ActiveSource${index}/Type                       = "Volumetric"
-s:So/ActiveSource${index}/Component                  = "SelectSeedRadioactiveLayer${index}"
-sc:So/ActiveSource${index}/ActiveMaterial            = "MatRadioactiveLayer"
-s:So/ActiveSource${index}/BeamParticle               = "gamma"
-ic:So/ActiveSource${index}/NumberOfHistoriesInRun    = 10
-i:So/ActiveSource${index}/MaxNumberOfPointsToSample  = 1000000000
-s:So/ActiveSource${index}/BeamEnergySpectrumType     = "Discrete"
+s:So/SelectSeedActiveSource${index}/Type                       = "Volumetric"
+s:So/SelectSeedActiveSource${index}/Component                  = "SelectSeedRadioactiveLayer${index}"
+sc:So/SelectSeedActiveSource${index}/ActiveMaterial            = "MatRadioactiveLayer"
+s:So/SelectSeedActiveSource${index}/BeamParticle               = "gamma"
+ic:So/SelectSeedActiveSource${index}/NumberOfHistoriesInRun    = ${photon_per_seed}
+i:So/SelectSeedActiveSource${index}/MaxNumberOfPointsToSample  = 1000000000
+s:So/SelectSeedActiveSource${index}/BeamEnergySpectrumType     = "Discrete"
 
 #### I-125 SPECTRUM ####
 dv:So/SelectSeedActiveSource${index}/BeamEnergySpectrumValues = 7 3.77 27.202 27.472 30.944 30.995 31.704 35.4922 keV
 uv:So/SelectSeedActiveSource${index}/BeamEnergySpectrumWeightsUnscaled = 7 0.149 0.401 0.740 0.0683 0.132 0.0380 0.0668
-uv:So/SelectSeedActiveSource${index}/BeamEnergySpectrumWeights = 0.626919 * So/SelectSeedActiveSource${index}/BeamEnergySpectrumWeightsUnscale
+uv:So/SelectSeedActiveSource${index}/BeamEnergySpectrumWeights = 0.626919 * So/SelectSeedActiveSource${index}/BeamEnergySpectrumWeightsUnscaled
 """)
 
 

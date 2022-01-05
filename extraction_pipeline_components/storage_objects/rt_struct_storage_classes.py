@@ -413,8 +413,6 @@ class Structures:
         new_index_3d_array = np.zeros([slices, rows, columns])
         it = 1
         for organs in list_of_desired_structures:
-            print(organs)
-            print(self.list_roi_names(), self.list_roi_observation_labels())
             organ_mask = self.get_specific_mask(organs, organs)
             binary_mask = organ_mask.get_3d_mask()
             new_index_3d_array = np.ma.array(new_index_3d_array, mask=binary_mask).filled(it)
@@ -449,7 +447,8 @@ class Structures:
                 added_material.append(material_name)
 
             tag_numbers = tag_numbers + f" {it}"
-            material_names = material_names + material_name + " "
+            it +=1
+            material_names = material_names + f""""{material_name}" """
 
         material_definition = HEADER + "\n\n"
         for material in added_material:
@@ -457,7 +456,7 @@ class Structures:
                 material_definition = material_definition + MATERIAL_DEFINITION_TABLE[material] + "\n\n"
 
         self.generate_3d_index_mapping_for_structures(list_of_desired_structures, save_to_file=True,
-                                                      path_to_save_to=default_path_to_3d_index_mapping)
+                                                      path_to_save_to=path_to_save_to)
 
         return material_definition + TG186_PATIENT.substitute(input_directory=directory, input_file_name=file_name,
                                                               transx=transx,

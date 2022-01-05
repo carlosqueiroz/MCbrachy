@@ -14,7 +14,7 @@ from extraction_pipeline_components.dosimetry_extraction import extract_dosimetr
 from root import ROOT
 
 default_path_to_3d_index_mapping = os.path.join(ROOT, r"simulation_files\3d_index_mapping", "3d_index_mapping")
-default_input_file_save_path = os.path.join(ROOT, r"simulation_files\topas_simulation_files", "simulation_input_file")
+default_input_file_save_path = os.path.join(ROOT, r"simulation_files\topas_simulation_files", "simulation_input_file.txt")
 
 
 class LDRBrachyPlan:

@@ -1,18 +1,21 @@
 certifi==2020.12.5
 chardet==4.0.0
 cycler==0.10.0
-dicom-anonymiseur @ git+https://gitlab.physmed.chudequebec.ca/gacou54/dicom-anonymiseur.git@ef79cdc8a2b0e456a361fd6002bdd07715e8ffb1
+dataclasses==0.6
 dicompyler-core==0.5.5
+grpm-uid==0.1
 idna==2.10
 kiwisolver==1.3.1
 matplotlib==3.4.2
 numpy==1.20.3
+opencv-python==4.5.5.62
 Pillow==8.2.0
 pydicom==2.1.2
 pyorthanc==0.2.14
 pyparsing==2.4.7
 python-dateutil==2.8.1
 requests==2.25.1
+rt-utils @ git+https://github.com/smichi23/rt-utils.git
 six==1.16.0
 urllib3==1.26.5
 xlrd==2.0.1

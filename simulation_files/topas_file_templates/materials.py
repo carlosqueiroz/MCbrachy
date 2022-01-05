@@ -78,7 +78,7 @@ d:Ma/TG186Water/Density     = 1.0 g/cm3
 """
 
 CALCIFICATION_ICRU46 = """
-sv:Ma/TG186Water/Components = 6 "Hydrogen" "Carbon" "Nitrogen" "Oxygen" "Phosphor" "Calcium"
-uv:Ma/TG186Water/Fractions  = 6 0.003 0.016 0.005 0.407 0.187 0.382
-d:Ma/TG186Water/Density     = 3.06 g/cm3
+sv:Ma/CALCIFICATION_ICRU46/Components = 6 "Hydrogen" "Carbon" "Nitrogen" "Oxygen" "Phosphorus" "Calcium"
+uv:Ma/CALCIFICATION_ICRU46/Fractions  = 6 0.003 0.016 0.005 0.407 0.187 0.382
+d:Ma/CALCIFICATION_ICRU46/Density     = 3.06 g/cm3
 """
