@@ -57,12 +57,15 @@ class Dosimetry:
         transx = originx - (nb_x * voxel_size_x - voxel_size_x) / 2
         transy = originy - (nb_y * voxel_size_y - voxel_size_y) / 2
         transz = -originz - (nb_z * voxel_size_z - voxel_size_z) / 2
+        hlx = voxel_size_x * nb_x / 2
+        hly = voxel_size_y * nb_y / 2
+        hlz = voxel_size_z * nb_z / 2
 
-        return CLINICAL_DOSE_GRID.substitute(input_directory=output_path, transx=transx,
-                                             transy=transy, tranz=transz, rotx="0.", roty="0.", rotz="0.",
+        return CLINICAL_DOSE_GRID.substitute(output_path=output_path, transx=transx,
+                                             transy=transy, transz=transz, rotx="0.", roty="0.", rotz="0.",
                                              nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
                                              voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x,
-                                             voxel_size_y=voxel_size_y)
+                                             voxel_size_y=voxel_size_y, hlx=hlx, hlz=hlz, hly=hly)
 
 
 class DVHistogram:

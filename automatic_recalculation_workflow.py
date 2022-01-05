@@ -110,7 +110,7 @@ if __name__ == "__main__":
                                                   f"dose_{patient}_{studies}")
                 plan.generate_whole_topas_input_file(100, ORGANS_TO_USE, output_saving_path, input_saving_path,
                                                      index_saving_path, add="i:Ts/NumberOfThreads = 7")
-                simulation = subprocess.Popen(f"topas {input_saving_path}")
+                simulation = subprocess.Popen(fr"C:\Users\osamu\AppData\Local\Packages\CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc\LocalState\rootfs\home\sam23\topas\bin\topas {input_saving_path}")
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)

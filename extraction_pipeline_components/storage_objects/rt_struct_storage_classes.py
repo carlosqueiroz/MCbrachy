@@ -6,6 +6,7 @@ import numpy as np
 import pydicom
 from simulation_files.topas_file_templates.medium_definition import TG186_PATIENT
 from rt_utils import RTStructBuilder
+from extraction_pipeline_components.storage_objects.storing_files.topas_material_conversion import *
 
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series, find_modality_in_folder
@@ -412,6 +413,8 @@ class Structures:
         new_index_3d_array = np.zeros([slices, rows, columns])
         it = 1
         for organs in list_of_desired_structures:
+            print(organs)
+            print(self.list_roi_names(), self.list_roi_observation_labels())
             organ_mask = self.get_specific_mask(organs, organs)
             binary_mask = organ_mask.get_3d_mask()
             new_index_3d_array = np.ma.array(new_index_3d_array, mask=binary_mask).filled(it)
@@ -431,30 +434,39 @@ class Structures:
         originx = self.x_y_z_origin[0]
         originy = self.x_y_z_origin[1]
         originz = self.x_y_z_origin[2]
-        transx = originx - (nb_x * voxel_size_x - voxel_size_x) /2
+        transx = originx - (nb_x * voxel_size_x - voxel_size_x) / 2
         transy = originy - (nb_y * voxel_size_y - voxel_size_y) / 2
         transz = -originz - (nb_z * voxel_size_z - voxel_size_z) / 2
 
-        tag_numbers = f"{len(list_of_desired_structures) +1} 0"
-        material_names = f"""{len(list_of_desired_structures) +1} "TG186Water" """
-
-        # TODO intégrer le vocab des contours
-        print(list_of_desired_structures)
-        topas_organ_vocab = {"prostate": "TG186Prostate"}
+        tag_numbers = f"{len(list_of_desired_structures) + 1} 0"
+        material_names = f"""{len(list_of_desired_structures) + 1} "TG186Water" """
 
         it = 1
+        added_material = ["TG186Water"]
         for organs in list_of_desired_structures:
+            material_name = MATERIAL_CONVERTER[organs]
+            if material_name not in added_material:
+                added_material.append(material_name)
+
             tag_numbers = tag_numbers + f" {it}"
-            material_names = material_names + topas_organ_vocab[organs] + " "
+            material_names = material_names + material_name + " "
+
+        material_definition = HEADER + "\n\n"
+        for material in added_material:
+            if material in MATERIAL_DEFINITION_TABLE.keys():
+                material_definition = material_definition + MATERIAL_DEFINITION_TABLE[material] + "\n\n"
 
         self.generate_3d_index_mapping_for_structures(list_of_desired_structures, save_to_file=True,
                                                       path_to_save_to=default_path_to_3d_index_mapping)
 
-        return TG186_PATIENT.substitute(input_directory=directory, input_file_name=file_name, transx=transx,
-                                        transy=transy, tranz=transz, rotx="0.", roty="0.", rotz="0.",
-                                        nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
-                                        voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x, voxel_size_y=voxel_size_y,
-                                        tag_numbers=tag_numbers, material_names=material_names)
+        return material_definition + TG186_PATIENT.substitute(input_directory=directory, input_file_name=file_name,
+                                                              transx=transx,
+                                                              transy=transy, tranz=transz, rotx="0.", roty="0.",
+                                                              rotz="0.",
+                                                              nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
+                                                              voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x,
+                                                              voxel_size_y=voxel_size_y,
+                                                              tag_numbers=tag_numbers, material_names=material_names)
 
     @staticmethod
     def rebuild_image_references_dict(open_dicom_as_json: dict) -> dict:
