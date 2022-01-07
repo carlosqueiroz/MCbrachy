@@ -11,7 +11,7 @@ from extraction_pipeline_components.storage_objects.storing_files.topas_material
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     generate_3d_image_from_series, find_modality_in_folder
 
-default_path_to_3d_index_mapping = os.path.join(ROOT, r"simulation_files\3d_index_mapping", "3d_index_mapping")
+default_path_to_3d_index_mapping = os.path.join(ROOT, r"simulation_files", "3d_index_mapping", "3d_index_mapping")
 
 
 class SliceMask:

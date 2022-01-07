@@ -8,7 +8,7 @@ s:Ge/PatientGroup/Parent = "World"
 
 
 s:Ge/Patient/DataType  = "int"
-s:Ge/Patient/InputDirectory = "${input_directory}"
+s:Ge/Patient/InputDirectory = "${input_directory}/"
 s:Ge/Patient/InputFile = "${input_file_name}"
 s:Ge/Patient/Type  = "TsImageCube"
 s:Ge/Patient/Parent = "PatientGroup"

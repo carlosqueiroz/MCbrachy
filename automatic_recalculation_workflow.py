@@ -100,15 +100,16 @@ if __name__ == "__main__":
 
             elif RECALCULATION_ALGORITHM == "topas":
                 photon_per_seed = 100
-                index_saving_path = os.path.join(ROOT, "simulation_files/3d_index_mapping",
+                index_saving_path = os.path.join(ROOT, "simulation_files", "3d_index_mapping",
                                                  f"mapping_{patient}_{studies}.bin")
-                input_saving_path = os.path.join(ROOT, "simulation_files/topas_simulation_files",
+                input_saving_path = os.path.join(ROOT, "simulation_files", "topas_simulation_files",
                                                  f"input_{patient}_{studies}.txt")
-                output_saving_path = os.path.join(ROOT, "simulation_files/topas_simulation_files",
-                                                  f"dose_{patient}_{studies}.dcm")
+                output_saving_path = os.path.join(ROOT, "simulation_files", "topas_simulation_files",
+                                                  f"dose_{patient}_{studies}")
                 plan.generate_whole_topas_input_file(100, ORGANS_TO_USE, output_saving_path, input_saving_path,
                                                      index_saving_path, add="i:Ts/NumberOfThreads = 7")
-                simulation = subprocess.Popen(fr"C:\Users\osamu\AppData\Local\Packages\CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc\LocalState\rootfs\home\sam23\topas\bin\topas {input_saving_path}")
+                bash_command = f"/topas/topas/bin/topas {input_saving_path}"
+                simulation = subprocess.run(bash_command.split())
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
