@@ -387,14 +387,11 @@ class Structures:
             path_to_ct_folder = os.path.dirname(path_to_a_ct_file)
             rtstruct = RTStructBuilder.create_from(
                 dicom_series_path=path_to_ct_folder,
-                rt_struct_path=path_to_rt_struct,
-                use_media_storage=False,
-            )
+                rt_struct_path=path_to_rt_struct)
             rtstruct.add_roi(
                 mask=np.swapaxes(np.swapaxes(np.flip(mask_3d, 0), 1, 2), 0, 2),
                 name=roi_name,
                 description=observation_label,
-                use_media_storage=False,
                 roi_generation_algorithm=segmentation_method
             )
 
