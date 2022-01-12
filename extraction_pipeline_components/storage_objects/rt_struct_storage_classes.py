@@ -360,12 +360,14 @@ class Structures:
         return x_bounds, y_bounds, z_bounds
 
     def add_mask_from_3d_array(self, mask_3d: np.ndarray, roi_name: str, observation_label: str,
-                               segmentation_method: int, add_to_original_rt_struct_file=False) -> None:
+                               segmentation_method: int, add_to_original_rt_struct_file=False,
+                               saving_path=None) -> None:
         """
         This method allows to add a contour which was not originally in the DICOM.
         To do so, this method takes the 3d mask array (which has to be the same dimension as the corresponding 3d image),
         the roi name and the observation label to generate a new Mask object that will be added to the list_of_masks
 
+        :param saving_path:
         :param segmentation_method: 2 = manual, 1= semi-automatic, 0=automatic
         :param add_to_original_rt_struct_file:
         :param mask_3d: 3d array with the 3d image size
@@ -394,8 +396,10 @@ class Structures:
                 description=observation_label,
                 roi_generation_algorithm=segmentation_method
             )
-
-            rtstruct.save(path_to_rt_struct)
+            if saving_path is None:
+                rtstruct.save(path_to_rt_struct)
+            else:
+                rtstruct.save(saving_path)
 
     def generate_3d_index_mapping_for_structures(self, list_of_desired_structures, save_to_file=False,
                                                  path_to_save_to=default_path_to_3d_index_mapping):

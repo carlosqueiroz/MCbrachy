@@ -145,7 +145,9 @@ def extract_contour_mask_and_image(json_dict_of_dicom_rt_struct: dict, img_shape
 
                 image = image_uid
                 if slice_z in slices_dict.keys():
-                    slices_dict[slice_z]["mask"] = slices_dict[slice_z]["mask"] + mask
+                    added_mask = slices_dict[slice_z]["mask"].astype(int) + mask.astype(int)
+                    mask_with_holes = np.ma.masked_where(added_mask == 1, added_mask).mask
+                    slices_dict[slice_z]["mask"] = mask_with_holes
                 else:
                     slices_dict[slice_z] = {"mask": mask, "image_uid": image}
 
