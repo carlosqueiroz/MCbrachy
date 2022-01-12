@@ -1,6 +1,7 @@
 import os
 import sys, getopt
 import subprocess
+import shutil
 from root import ROOT
 from extraction_pipeline_components.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
@@ -63,15 +64,14 @@ def get_aguments(argv):
             print('automatic_recalculation_workflow.py -i <inputfolder> -a <algorithm> -r <restructure>')
             sys.exit()
 
-    return patient_directory, organ_contours_to_use, recalculation_algorithm, restructuring, segmenting_calcification
+    return organ_contours_to_use, recalculation_algorithm, restructuring, segmenting_calcification
 
 
 if __name__ == "__main__":
-    PATIENTS_DIRECTORY, ORGANS_TO_USE, RECALCULATION_ALGORITHM, RESTRUCTURING_FOLDERS, \
-    SEGMENTING_CALCIFICATIONS = get_aguments(sys.argv[1:])
-    if PATIENTS_DIRECTORY is None:
-        print('automatic_recalculation_workflow.py -i <inputfolder> -a <algorithm> -r <restructure>')
-        sys.exit()
+    ORGANS_TO_USE, RECALCULATION_ALGORITHM, RESTRUCTURING_FOLDERS, \
+    SEGMENTING_CALCIFICATIONS = get_aguments(sys.argv[1:-2])
+    PATIENTS_DIRECTORY = sys.argv[-2]
+    OUTPUT_PATH = sys.argv[-1]
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
@@ -92,7 +92,10 @@ if __name__ == "__main__":
                                               roi_name="calcification",
                                               observation_label="masking souces with cylindrical masks with "
                                                                 "thresholding",
-                                              segmentation_method=1, add_to_original_rt_struct_file=True)
+                                              segmentation_method=1, add_to_original_rt_struct_file=True,
+                                              saving_path=os.path.join(OUTPUT_PATH,
+                                                                       f"updated_{patient}_{studies}_RTSTRUCT.dcm"))
+
             if RECALCULATION_ALGORITHM == "egs_brachy":
                 # struct.generate_egs_phant_file_from_structures()
                 # plan.generate_transformation_files()
@@ -100,15 +103,16 @@ if __name__ == "__main__":
 
             elif RECALCULATION_ALGORITHM == "topas":
                 photon_per_seed = 100
-                index_saving_path = os.path.join(ROOT, "simulation_files", "3d_index_mapping",
+                index_saving_path = os.path.join(OUTPUT_PATH,
                                                  f"mapping_{patient}_{studies}.bin")
-                input_saving_path = os.path.join(ROOT, "simulation_files", "topas_simulation_files",
+                input_saving_path = os.path.join(OUTPUT_PATH,
                                                  f"input_{patient}_{studies}.txt")
-                output_saving_path = os.path.join(ROOT, "simulation_files", "topas_simulation_files",
-                                                  f"dose_{patient}_{studies}")
+                output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
                 plan.generate_whole_topas_input_file(100, ORGANS_TO_USE, output_saving_path, input_saving_path,
-                                                     index_saving_path, add="i:Ts/NumberOfThreads = 7")
+                                                     index_saving_path)
                 bash_command = f"/topas/topas/bin/topas {input_saving_path}"
+                os.chmod(input_saving_path, 0o777)
+                os.chmod(index_saving_path, 0o777)
                 simulation = subprocess.run(bash_command.split())
 
         if RESTRUCTURING_FOLDERS:
