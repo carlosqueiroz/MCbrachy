@@ -134,3 +134,9 @@ def add_expression_to_contour_vocab(dicom_contour: str, contour_vocabulary: dict
     vocab_file = open(contour_vocab_path, "w")
     json.dump(contour_vocabulary, vocab_file)
     vocab_file.close()
+
+
+def get_key_from_value(dict, val):
+    for key, value in dict.items():
+        if val in value:
+            return key

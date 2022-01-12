@@ -1,4 +1,6 @@
+import json
 import logging
+from itertools import chain
 from typing import List, Tuple
 
 from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import Structures, Mask, SliceMask
@@ -9,6 +11,7 @@ from PIL import Image, ImageDraw
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import \
     convert_real_coord_to_pixel_coord, \
     extract_positionning_informations, find_instance_in_folder
+from preprocessing_pipeline_components.contour_verification import contour_vocab_path, get_key_from_value
 
 
 def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, study_folder: str) -> Structures or None:
@@ -41,11 +44,20 @@ def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, stud
             json_version_dicom = open_dicom.to_json_dict()
             contours_context_dict = extract_contour_context_info(json_version_dicom)
             contours_and_image_dict = extract_contour_mask_and_image(json_version_dicom, img_shape, z_y_x_spacing,
-                                                                     x_y_z_origin, x_y_z_rotation_vectors, image_ref_dict)
+                                                                     x_y_z_origin, x_y_z_rotation_vectors,
+                                                                     image_ref_dict)
             list_of_masks = []
             for contours in contours_and_image_dict.keys():
                 roi_name = contours_context_dict[contours]['ROIName']
                 roi_observation_label = contours_context_dict[contours]['ROIObservationLabel']
+                contour_vocabulary_file = open(contour_vocab_path, "r")
+                contour_vocabulary = json.loads(contour_vocabulary_file.read())
+                contour_vocabulary_file.close()
+                if roi_name in chain(*contour_vocabulary.values()):
+                    roi_name = get_key_from_value(contour_vocabulary, roi_name)
+                if roi_observation_label in chain(*contour_vocabulary.values()):
+                    roi_observation_label = get_key_from_value(contour_vocabulary, roi_observation_label)
+
                 mask = Mask(roi_name, roi_observation_label, structure, list_mask_slices=[])
                 list_of_slices = []
                 for slices in contours_and_image_dict[contours].keys():
@@ -88,9 +100,11 @@ def extract_contour_context_info(json_dict_of_dicom_rt_struct: dict) -> dict:
     for roi in observation_sequence:
         try:
             if "30060085" in roi.keys():
-                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": str(roi["30060085"]["Value"][0])}
+                observation_label[roi["30060084"]["Value"][0]] = {
+                    "ROIObservationLabel": str(roi["30060085"]["Value"][0])}
             else:
-                observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": str(roi["30060088"]["Value"][0])}
+                observation_label[roi["30060084"]["Value"][0]] = {
+                    "ROIObservationLabel": str(roi["30060088"]["Value"][0])}
 
         except KeyError:
             observation_label[roi["30060084"]["Value"][0]] = {"ROIObservationLabel": ""}
@@ -205,7 +219,8 @@ def build_image_references_dict(open_dicom_as_json: dict) -> dict:
     :param open_dicom_as_json: rt_struct dicom as json
     :return: the dictionary having slice number as key and uid as value
     """
-    all_images_uids = open_dicom_as_json["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
+    all_images_uids = \
+    open_dicom_as_json["30060010"]["Value"][0]["30060012"]["Value"][0]["30060014"]["Value"][0]["30060016"]["Value"]
 
     ref_images_dict = {}
     if "00081160" not in all_images_uids[0].keys():

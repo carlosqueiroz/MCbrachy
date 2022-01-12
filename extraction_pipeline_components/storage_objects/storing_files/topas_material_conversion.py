@@ -1,10 +1,10 @@
 from simulation_files.topas_file_templates.materials import *
 
 # TODO attenteion à changer
-MATERIAL_CONVERTER = {"Target": "TG186Prostate",
-                      "Bladder": "TG186MeanMaleSoftTissue",
-                      "Rectum": "Air",
-                      "Urethra": "TG186MeanMaleSoftTissue",
+MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
+                      "vessie": "TG186MeanMaleSoftTissue",
+                      "rectum": "Air",
+                      "uretre": "TG186MeanMaleSoftTissue",
                       "Bladder Neck": "TG186MeanMaleSoftTissue",
                       "calcification": "CALCIFICATION_ICRU46"}
 

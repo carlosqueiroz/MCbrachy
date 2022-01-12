@@ -142,8 +142,8 @@ class LDRBrachyPlan:
                                                           x_y_z_origin,
                                                           x_y_rotation_vectors)
 
-        image, masks = self.structures.get_3d_image_with_all_masks()
-        calcification_mask = (348 < image) * masks["Target"]
+        image, masks = self.structures.get_specific_mask("prostate", "prostate").get_3d_mask_with_3d_image()
+        calcification_mask = (348 < image) * masks
 
         def optimize_kills_on_number_of_slices(initial_mask: np.ndarray, slice_mask: np.ndarray,
                                                nb_slice_desired: int, theoretical_slice: int):
