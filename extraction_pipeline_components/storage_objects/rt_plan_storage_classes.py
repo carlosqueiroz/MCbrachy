@@ -219,9 +219,14 @@ class LDRBrachyPlan:
 
         return all_sources_string + physics.LDR_BRACHY_PHYSICS
 
-    def generate_whole_topas_input_file(self, photon_per_seed: int, list_of_desired_structures, output_path,
+    def generate_whole_topas_input_file(self, total_particles: int, list_of_desired_structures, output_path,
                                         path_to_save_input_file=default_input_file_save_path,
                                         path_to_save_index=default_path_to_3d_index_mapping, add=""):
+        total_seeds = 0
+        for sources in self.list_of_sources:
+            total_seeds += len(sources.positions)
+
+        photon_per_seed = int(total_particles/total_seeds)
         if self.dosi_is_built and self.structures_are_built:
             full_input_file = self.generate_topas_seed_string(photon_per_seed) + "\n\n"
             full_input_file += self.structures.generate_topas_input_string_and_3d_mapping(list_of_desired_structures,
