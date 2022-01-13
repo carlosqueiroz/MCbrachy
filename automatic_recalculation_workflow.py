@@ -106,9 +106,9 @@ if __name__ == "__main__":
 
             elif RECALCULATION_ALGORITHM == "topas":
                 photon_per_seed = 100
-                index_saving_path = os.path.join(OUTPUT_PATH,
+                index_saving_path = os.path.join(ROOT, "simulation_files", "3d_index_mapping",
                                                  f"mapping_{patient}_{studies}.bin")
-                input_saving_path = os.path.join(OUTPUT_PATH,
+                input_saving_path = os.path.join(ROOT, "simulation_files", "topas_simulation_files",
                                                  f"input_{patient}_{studies}.txt")
                 output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
                 plan.generate_whole_topas_input_file(NUMBER_OF_PARTICLES, ORGANS_TO_USE, output_saving_path,
@@ -117,6 +117,10 @@ if __name__ == "__main__":
                 os.chmod(input_saving_path, 0o777)
                 os.chmod(index_saving_path, 0o777)
                 simulation = subprocess.run(bash_command.split())
+                plan.dosimetry.adapt_produced_rt_dose_to_original_structure(output_saving_path + ".dcm", study_path)
+                plan.add_reference_of_new_rt_dose(output_saving_path + ".dcm",
+                                                  os.path.join(OUTPUT_PATH, f"updated_{patient}_{studies}_RTPLAN.dcm"),
+                                                  study_path)
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)

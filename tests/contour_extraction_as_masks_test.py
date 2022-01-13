@@ -56,9 +56,10 @@ class TestExtractMasksForEachOrgansForEachSlices(unittest.TestCase):
         self.assertEqual(structures.rt_struct_uid, "1.2.826.0.1.3680043.10.424.6377455315485968017200746515229809227")
         self.assertEqual(structures.image_shape, (99, 512, 512))
         self.assertEqual(structures.study_folder, path_to_study)
-        self.assertEqual(structures.list_roi_observation_labels(), ['target', 'urethra', 'bladder', 'rectum',
-                                                                    'bladder_neck'])
-        self.assertEqual(structures.list_roi_names(), ['target', 'urethra', 'bladder', 'rectum', 'bladder_neck'])
+        self.assertEqual(structures.list_roi_observation_labels(), ['prostate', 'uretre', 'vessie', 'rectum',
+                                                                    'Bladder Neck'])
+        self.assertEqual(structures.list_roi_names(), ['prostate', 'uretre', 'vessie', 'rectum',
+                                                       'Bladder Neck'])
         self.assertEqual(len(structures.list_of_masks), 5)
         self.assertEqual(len(structures.list_of_masks[0].list_mask_slices), 13)
         self.assertEqual(structures.list_of_masks[0].list_slice_numbers(), [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58,

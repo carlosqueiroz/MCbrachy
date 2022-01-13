@@ -1,5 +1,8 @@
 FROM saoue66/topas:0.1
 
+ARG GIT_USER
+ARG GIT_PASS
+
 ENV topas="/topas/topas/bin/topas"
 ENV TOPAS_G4_DATA_DIR="/G4Data"
 
@@ -10,6 +13,7 @@ COPY . /workflow
 RUN chmod ugo+x -R /workflow
 
 RUN apt install -y git &&\
+    git config --global url."https://${GIT_USER}:${GIT_PASS}@gitlab.chudequebec.ca".insteadOf "https://gitlab.chudequebec.ca"&&\
     apt install -y python3.8-venv &&\
     python3 -m venv venv &&\
     ls -a &&\
