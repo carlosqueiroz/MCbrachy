@@ -243,18 +243,6 @@ class LDRBrachyPlan:
         else:
             logging.warning("Dosimetry or Structures not built")
 
-    def add_reference_of_new_rt_dose(self, new_rt_dose_path, output_saving_path, original_study_path):
-        new_rt_dose = pydicom.dcmread(new_rt_dose_path)
-        new_rt_dose_uid = new_rt_dose.SOPInstanceUID
-        new_rt_dose_uid_class = new_rt_dose.SOPClassUID
-        original_plan_path = find_instance_in_folder(self.rt_plan_uid, original_study_path)
-        original_rt_plan = pydicom.dcmread(original_plan_path)
-        reference_template = copy.deepcopy(original_rt_plan.ReferencedDoseSequence[0])
-        reference_template.ReferencedSOPClassUID = new_rt_dose_uid_class
-        reference_template.ReferencedSOPInstanceUID = new_rt_dose_uid
-        original_rt_plan.ReferencedDoseSequence = [original_rt_plan.ReferencedDoseSequence[0], reference_template]
-        original_rt_plan.save_as(output_saving_path)
-
 
 class Sources:
     def __init__(self, source_isotope_name, air_kerma_rate, ref_date, ref_time, material, source_type,

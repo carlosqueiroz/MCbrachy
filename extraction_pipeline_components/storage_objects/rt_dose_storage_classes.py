@@ -1,8 +1,5 @@
-import pydicom
-
 from simulation_files.topas_file_templates.scorer_definition import CLINICAL_DOSE_GRID
-from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder
-from grpm_uid.uid_generation import generate_uid
+
 
 class Dosimetry:
     """
@@ -69,28 +66,6 @@ class Dosimetry:
                                              nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
                                              voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x,
                                              voxel_size_y=voxel_size_y, hlx=hlx, hlz=hlz, hly=hly)
-
-    def adapt_produced_rt_dose_to_original_structure(self, path_to_the_new_rt_dose, original_study_path):
-        new_rt_dose = pydicom.dcmread(path_to_the_new_rt_dose)
-        first_rt_dose_path = find_instance_in_folder(self.rt_dose_uid, original_study_path)
-        first_rt_dose = pydicom.dcmread(first_rt_dose_path)
-        new_rt_dose.StudyDate = first_rt_dose.StudyDate
-        new_rt_dose.StudyTime = first_rt_dose.StudyTime
-        new_rt_dose.InstitutionName = first_rt_dose.InstitutionName
-        new_rt_dose.ReferringPhysicianName = first_rt_dose.ReferringPhysicianName
-        new_rt_dose.PatientName = first_rt_dose.PatientName
-        new_rt_dose.PatientID = first_rt_dose.PatientID
-        new_rt_dose.PatientBirthDate = first_rt_dose.PatientBirthDate
-        new_rt_dose.PatientSex = first_rt_dose.PatientSex
-        new_rt_dose.StudyInstanceUID = first_rt_dose.StudyInstanceUID
-        new_rt_dose.ImagePositionPatient = first_rt_dose.ImagePositionPatient
-        new_rt_dose.ImageOrientationPatient = first_rt_dose.ImageOrientationPatient
-        new_rt_dose.SOPInstanceUID = generate_uid()
-        new_rt_dose.SeriesInstanceUID = generate_uid()
-        new_rt_dose.SliceThickness = first_rt_dose.SliceThickness
-        new_rt_dose.ReferencedRTPlanSequence = first_rt_dose.ReferencedRTPlanSequence
-
-        new_rt_dose.save_as(path_to_the_new_rt_dose)
 
 
 class DVHistogram:

@@ -21,9 +21,9 @@ d:Ge/DoseGrid/RotZ               = ${rotz} deg
 b:Ge/DoseGrid/IsParallel = "T"
 
 d:Sc/DoseOnRTGrid/OnlyIncludeParticlesWithInitialKEAbove : 5. keV
-s:Sc/DoseOnRTGrid/Quantity                   = "DoseToMedium"
+s:Sc/DoseOnRTGrid/Quantity                   = "DoseToMedium" 
 s:Sc/DoseOnRTGrid/Component                  = "DoseGrid"
-
+sv:Sc/DoseOnRTGrid/Report                  = 2 "Sum" "Standard_Deviation"
 b:Sc/DoseOnRTGrid/OutputToConsole            = "F"
 s:Sc/DoseOnRTGrid/IfOutputFileAlreadyExists  = "Increment"
 s:Sc/DoseOnRTGrid/OutputType                 = "DICOM"
