@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from itertools import chain
 from typing import List, Tuple
 
@@ -11,7 +12,16 @@ from PIL import Image, ImageDraw
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import \
     convert_real_coord_to_pixel_coord, \
     extract_positionning_informations, find_instance_in_folder
-from preprocessing_pipeline_components.contour_verification import contour_vocab_path, get_key_from_value
+from root import ROOT
+
+contour_vocab_path = os.path.join(ROOT, "extraction_pipeline_components", "storage_objects", "storing_files",
+                                  "contour_vocabulary.json")
+
+
+def get_key_from_value(dict, val):
+    for key, value in dict.items():
+        if val in value:
+            return key
 
 
 def extract_masks_for_each_organs_for_each_slices(rt_struct_file_path: str, study_folder: str) -> Structures or None:
