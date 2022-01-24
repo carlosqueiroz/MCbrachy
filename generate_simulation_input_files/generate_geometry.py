@@ -6,7 +6,7 @@ import numpy as np
 from generate_simulation_input_files.material_attribution import TOPAS_MATERIAL_CONVERTER
 from topas_file_generator.additional_materials.material_definition_table import MATERIAL_DEFINITION_TABLE
 from topas_file_generator.geometries.tg186_patient import TG186_PATIENT
-from extraction_pipeline_components.storage_objects.rt_struct_storage_classes import Structures
+from dicom_rt_context_extractor.storage_objects.rt_struct_storage_classes import Structures
 
 
 def generate_3d_index_mapping_for_structures(structures: Structures, list_of_desired_structures, path_to_save_to,

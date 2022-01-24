@@ -1,5 +1,5 @@
 import numpy as np
-from extraction_pipeline_components.storage_objects.rt_plan_storage_classes import Sources, LDRBrachyPlan
+from dicom_rt_context_extractor.storage_objects.rt_plan_storage_classes import Sources, LDRBrachyPlan
 from topas_file_generator.LDR_brachy.LDR_physics import LDR_BRACHY_PHYSICS
 from topas_file_generator.LDR_brachy.seed_templates import iodine125_select_seed
 

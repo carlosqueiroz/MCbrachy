@@ -98,14 +98,6 @@ cmake-build-*/
 /.idea
 # End of https://www.toptal.com/developers/gitignore/api/pycharm
 
-/preprocessing_pipeline_components/patientID_mapping.csv
 /venv/**
-/venv
-/logs/**
-!/logs/.gitignore
-/simulation_files/3d_index_mapping/**
-!/simulation_files/3d_index_mapping/.gitignore
-/simulation_files/egs_brachy_simulation_files/**
-!/simulation_files/egs_brachy_simulation_files/.gitignore
-/simulation_files/topas_simulation_files/**
-!/simulation_files/topas_simulation_files/.gitignore
+/venve
+/simulation_files/**

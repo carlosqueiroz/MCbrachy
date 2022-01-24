@@ -1,4 +1,4 @@
-from extraction_pipeline_components.storage_objects.rt_dose_storage_classes import Dosimetry
+from dicom_rt_context_extractor.storage_objects.rt_dose_storage_classes import Dosimetry
 from topas_file_generator.scorers.dose_grid_from_dicom_rt import dose_grid_from_dicom_rt
 
 
