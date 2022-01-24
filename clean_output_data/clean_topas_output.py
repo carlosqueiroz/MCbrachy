@@ -1,0 +1,6 @@
+from dicom_rt_context_extractor.sources_information_extraction import extract_all_sources_informations
+from dicom_rt_context_extractor.storage_objects.rt_plan_storage_classes import LDRBrachyPlan
+
+
+def clean_topas_output(plan: LDRBrachyPlan, path_to_bin_result, path_to_bin_header, path_to_rt_plan):
+    pass

@@ -44,9 +44,9 @@ def generate_topas_input_string_and_3d_mapping(structures: Structures, list_of_d
     originx = structures.x_y_z_origin[0]
     originy = structures.x_y_z_origin[1]
     originz = structures.x_y_z_origin[2]
-    transx = originx - (nb_x * voxel_size_x - voxel_size_x) / 2
-    transy = originy - (nb_y * voxel_size_y - voxel_size_y) / 2
-    transz = -originz - (nb_z * voxel_size_z - voxel_size_z) / 2
+    transx = originx + (nb_x * voxel_size_x - voxel_size_x) / 2
+    transy = originy + (nb_y * voxel_size_y - voxel_size_y) / 2
+    transz = originz - (nb_z * voxel_size_z - voxel_size_z) / 2
 
     tag_numbers = f"{len(list_of_desired_structures) + 1} 0"
     material_names = f"""{len(list_of_desired_structures) + 1} "TG186Water" """

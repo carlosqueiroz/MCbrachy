@@ -7,7 +7,7 @@ from generate_simulation_input_files.generate_treatment_plan import generate_top
 
 def generate_whole_topas_input_file(plan: LDRBrachyPlan, total_particles: int, list_of_desired_structures, output_path,
                                     path_to_save_input_file,
-                                    path_to_save_index, add=""):
+                                    path_to_save_index, output_type, add=""):
     total_seeds = 0
     for sources in plan.list_of_sources:
         total_seeds += len(sources.positions)
@@ -18,7 +18,7 @@ def generate_whole_topas_input_file(plan: LDRBrachyPlan, total_particles: int, l
         full_input_file += generate_topas_input_string_and_3d_mapping(plan.structures,
                                                                       list_of_desired_structures,
                                                                       path_to_save_index) + "\n\n"
-        full_input_file += generate_topas_scorer(plan.dosimetry, output_path) + "\n\n" + add
+        full_input_file += generate_topas_scorer(plan.dosimetry, output_path, output_type) + "\n\n" + add
 
         text_file = open(path_to_save_input_file, "w")
         text_file.write(full_input_file)
