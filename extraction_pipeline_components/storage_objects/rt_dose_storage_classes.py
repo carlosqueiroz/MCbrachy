@@ -1,5 +1,3 @@
-from simulation_files.topas_file_templates.scorer_definition import CLINICAL_DOSE_GRID
-
 
 class Dosimetry:
     """
@@ -47,25 +45,6 @@ class Dosimetry:
 
         else:
             self.list_of_dvh.append(dvh)
-
-    def generate_topas_scorer(self, output_path):
-        voxel_size_z, voxel_size_y, voxel_size_x = self.pixel_spacing
-        nb_z, nb_y, nb_x = self.dose_grid_shape
-        originx = self.image_position_in_patient[0]
-        originy = self.image_position_in_patient[1]
-        originz = self.image_position_in_patient[2]
-        transx = originx - (nb_x * voxel_size_x - voxel_size_x) / 2
-        transy = originy - (nb_y * voxel_size_y - voxel_size_y) / 2
-        transz = -originz - (nb_z * voxel_size_z - voxel_size_z) / 2
-        hlx = voxel_size_x * nb_x / 2
-        hly = voxel_size_y * nb_y / 2
-        hlz = voxel_size_z * nb_z / 2
-
-        return CLINICAL_DOSE_GRID.substitute(output_path=output_path, transx=transx,
-                                             transy=transy, transz=transz, rotx="0.", roty="0.", rotz="0.",
-                                             nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
-                                             voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x,
-                                             voxel_size_y=voxel_size_y, hlx=hlx, hlz=hlz, hly=hly)
 
 
 class DVHistogram:

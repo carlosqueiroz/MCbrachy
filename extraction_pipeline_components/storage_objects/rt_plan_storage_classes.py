@@ -1,13 +1,7 @@
-import copy
 import logging
 import os
 
 import numpy as np
-import pydicom
-
-import simulation_files.topas_file_templates.iodine125_select_seed as selectseed
-import simulation_files.topas_file_templates.physics as physics
-
 from extraction_pipeline_components.contour_extraction_as_masks import extract_masks_for_each_organs_for_each_slices
 from extraction_pipeline_components.utils.search_instance_and_convert_coord_in_pixel import find_instance_in_folder, \
     convert_real_coord_to_pixel_coord
@@ -215,34 +209,6 @@ class LDRBrachyPlan:
 
         return calcification_mask.astype(bool)
 
-    def generate_topas_seed_string(self, photon_per_seed: int):
-        all_sources_string = ""
-        for sources in self.list_of_sources:
-            all_sources_string = all_sources_string + sources.generate_sources_topas_string(photon_per_seed) + "\n\n"
-
-        return all_sources_string + physics.LDR_BRACHY_PHYSICS
-
-    def generate_whole_topas_input_file(self, total_particles: int, list_of_desired_structures, output_path,
-                                        path_to_save_input_file=default_input_file_save_path,
-                                        path_to_save_index=default_path_to_3d_index_mapping, add=""):
-        total_seeds = 0
-        for sources in self.list_of_sources:
-            total_seeds += len(sources.positions)
-
-        photon_per_seed = int(total_particles/total_seeds)
-        if self.dosi_is_built and self.structures_are_built:
-            full_input_file = self.generate_topas_seed_string(photon_per_seed) + "\n\n"
-            full_input_file += self.structures.generate_topas_input_string_and_3d_mapping(list_of_desired_structures,
-                                                                                          path_to_save_index) + "\n\n"
-            full_input_file += self.dosimetry.generate_topas_scorer(output_path) + "\n\n" + add
-
-            text_file = open(path_to_save_input_file, "w")
-            text_file.write(full_input_file)
-            text_file.close()
-
-        else:
-            logging.warning("Dosimetry or Structures not built")
-
 
 class Sources:
     def __init__(self, source_isotope_name, air_kerma_rate, ref_date, ref_time, material, source_type,
@@ -274,48 +240,6 @@ class Sources:
         self.source_lenght = source_lenght
         self.positions = positions
         self.orientations = orientations
-
-    def generate_transformation_file_for_sources(self, new_file_path: str) -> None:
-        """
-        This method generates egs_brachy transformation file from
-        the sources positions.
-
-        :param new_file_path:
-        :return:
-        """
-        pos = self.positions / 10
-        orientation = self.orientations
-        if orientation.shape[1] == 0:
-            orientation = np.zeros((pos.shape[0], pos.shape[1]))
-
-        vocab_file = open(new_file_path, "w")
-        for i in range(0, pos.shape[0]):
-            vocab_file.write(":start transformation: \n")
-            vocab_file.write(f"translation = {pos[i, 0]} {pos[i, 1]} {pos[i, 2]} \n")
-            vocab_file.write(f"rotation = {orientation[i, 0]} {orientation[i, 1]} {orientation[i, 2]} \n")
-            vocab_file.write(":stop transformation:\n\n")
-
-        vocab_file.close()
-
-    def generate_sources_topas_string(self, photon_per_seed):
-        """
-
-        :param photon_per_seed:
-        :return:
-        """
-        if self.source_manufacturer == "Nucletron B.V." and self.source_isotope_name == "I-125":
-            sources_topas_string = selectseed.HEADER + "\n\n" + selectseed.MATERIALS
-            for index in range(self.positions.shape[0]):
-                sources_topas_string += "\n\n" + selectseed.SEEDS.substitute(index=index,
-                                                                             photon_per_seed=photon_per_seed,
-                                                                             position_x=self.positions[index][0],
-                                                                             position_y=self.positions[index][1],
-                                                                             position_z=self.positions[index][2])
-
-            return sources_topas_string
-
-        else:
-            raise NotImplementedError
 
 
 
