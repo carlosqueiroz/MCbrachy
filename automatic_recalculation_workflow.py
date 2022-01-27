@@ -1,12 +1,17 @@
+import getopt
 import os
-import sys, getopt
 import subprocess
+import sys
+
+from clean_output_data.clean_topas_output import clean_topas_output
+from dicom_rt_context_extractor.sources_information_extraction import extract_all_sources_informations
+from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
+from dicom_rt_context_extractor.utils.search_instance_and_convert_coord_in_pixel import find_modality_in_folder,\
+    find_instance_in_folder
+from prostate_calcification_segmentation.calcification_segmentation import segmenting_calcification
+
 from generate_simulation_input_files.generate_simulation_input_files import generate_whole_topas_input_file
 from root import ROOT
-from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
-from dicom_rt_context_extractor.utils.search_instance_and_convert_coord_in_pixel import find_modality_in_folder
-from dicom_rt_context_extractor.sources_information_extraction import extract_all_sources_informations
-from prostate_calcification_segmentation.calcification_segmentation import segmenting_calcification
 
 
 def get_aguments(argv):
@@ -14,7 +19,7 @@ def get_aguments(argv):
     recalculation_algorithm = "topas"
     segment_calcification = False
     organ_contours_to_use = []
-    number_of_particles = 1000000
+    number_of_particles = 1000
 
     try:
         opts, args = getopt.getopt(argv, "i:o:a:r:s:p:")
@@ -83,7 +88,6 @@ if __name__ == "__main__":
 
         for studies in os.listdir(patient_folder_path):
             study_path = os.path.join(patient_folder_path, studies)
-
             # Lets find and extract the rt plan first
             rt_plan_path = find_modality_in_folder("RTPLAN", study_path)
             plan = extract_all_sources_informations(rt_plan_path)
@@ -91,7 +95,7 @@ if __name__ == "__main__":
             plan.extract_dosimetry(study_path)
             struct = plan.get_structures()
             if SEGMENT_CALCIFICATIONS:
-                struct.add_mask_from_3d_array(segmenting_calcification(plan, 2.236, study_path),
+                struct.add_mask_from_3d_array(segmenting_calcification(plan, 1.9, study_path),
                                               roi_name="calcification",
                                               observation_label="masking souces with cylindrical masks with "
                                                                 "thresholding",
@@ -102,14 +106,14 @@ if __name__ == "__main__":
             if RECALCULATION_ALGORITHM == "egs_brachy":
                 # struct.generate_egs_phant_file_from_structures()
                 # plan.generate_transformation_files()
-                pass
+                raise NotImplementedError
 
             elif RECALCULATION_ALGORITHM == "topas":
                 index_saving_path = os.path.join(ROOT, "simulation_files",
                                                  f"mapping_{patient}_{studies}.bin")
                 input_saving_path = os.path.join(ROOT, "simulation_files",
                                                  f"input_{patient}_{studies}.txt")
-                output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}.bin")
+                output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
                 try:
                     string_to_add = "i:Ts/NumberOfThreads = -2 \ni:Ts/ShowHistoryCountAtInterval = 10000"
                     generate_whole_topas_input_file(plan, NUMBER_OF_PARTICLES, ORGANS_TO_USE, output_saving_path,
@@ -119,25 +123,15 @@ if __name__ == "__main__":
                     os.chmod(input_saving_path, 0o777)
                     os.chmod(index_saving_path, 0o777)
                     simulation = subprocess.run(bash_command.split())
-                    """
                     path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
+                    output_rt_dose = os.path.join(OUTPUT_PATH, f"topas_dose_{patient}_{studies}.dcm")
+                    output_rt_dose_err = os.path.join(OUTPUT_PATH, f"topas_err_{patient}_{studies}.dcm")
+                    output_rt_plan = os.path.join(OUTPUT_PATH, f"updated_plan_{patient}_{studies}.dcm")
+                    clean_topas_output(output_saving_path + ".bin", path_to_rt_dose, rt_plan_path, plan, output_rt_dose,
+                                       output_rt_dose_err, output_rt_plan, "Scaling factor gives total dose in GY",
+                                       "Warning, the scailing factor is the dose scailing factor error", "workflow:0",
+                                       "TOPAS_TG186_DOSE")
 
-                    adapt_rt_dose_to_existing_rt_dose_grid(output_saving_path + ".dcm", path_to_rt_dose)
-                    add_data_element_to_dicom(DoseUnitsAttribute("GY"), output_saving_path + ".dcm")
-                    add_data_element_to_dicom(DoseTypeAttribute("PHYSICAL"), output_saving_path + ".dcm")
-                    add_data_element_to_dicom(DoseTypeAttribute("PHYSICAL"), output_saving_path + ".dcm")
-                    add_data_element_to_dicom(DoseSummationTypeAttribute("PLAN"), output_saving_path + ".dcm")
-                    add_reference_in_rt_plan(rt_plan_path,
-                                             output_saving_path + ".dcm", os.path.join(OUTPUT_PATH,
-                                                                                       f"updated_{patient}_{studies}_RTPLAN.dcm"))
-
-                    path_to_rt_struct = find_instance_in_folder(plan.rt_struct_uid, study_path)
-                    generate_and_add_all_dvh_to_dicom(output_saving_path + ".dcm", os.path.join(OUTPUT_PATH,
-                                                                                                f"updated_{patient}_{studies}_RTSTRUCT.dcm"),
-                                                      output_saving_path + ".dcm", "DVH generated by dicompyler",
-                                                      dose_scaling_factor=1.0, dose_type="PHYSICAL",
-                                                      contribution_type="INCLUDE", prescription_dose=144)
-                    """
                 except NotImplementedError:
                     continue
 

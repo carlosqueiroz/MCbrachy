@@ -17,7 +17,7 @@ RUN apt install -y git &&\
     apt install -y python3.8-venv &&\
     python3 -m venv venv &&\
     ls -a &&\
-    ./venv/bin/pip install -r ./requirements.txt
+    ./venv/bin/pip install -U -r ./requirements.txt
 
 ENTRYPOINT ["./venv/bin/python", "automatic_recalculation_workflow.py", "-o", "rectum", "-o", "vessie", "-o", "uretre", "-o", "rectum", "-o", "calcification", "-a", "topas",  "-s", "True",  "-r", "False"]
-    
+

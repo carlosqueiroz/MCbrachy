@@ -1,4 +1,4 @@
-KNOWN_SOURCES = {}
+from topas_file_generator.LDR_brachy.seed_templates import iodine125_select_seed
 
 
 def calculate_dose_rate_conversion_factor(treatment_kerma_rate, simulation_kerma_strength):
@@ -26,9 +26,39 @@ def calculate_total_dose(treatment_kerma_rate, simulation_kerma_strength, treatm
     return dose_rate * treatment_time
 
 
-def calculate_dose_rate_conversion_factor_with_know_caracteristics(source_model):
-    pass
+def calculate_dose_rate_conversion_factor_with_know_caracteristics(source_model, treatment_kerma_rate):
+    if source_model == "SelectSeed":
+        air_kerma_str = iodine125_select_seed.AIR_KERMA_STRENGTH
+    else:
+        raise NotImplementedError
+
+    return calculate_dose_rate_conversion_factor(treatment_kerma_rate, air_kerma_str)
 
 
-def calculate_total_dose_conversion_factor_with_know_caracteristics(source_model):
-    pass
+def calculate_total_dose_conversion_factor_with_know_caracteristics(source_model, treatment_kerma_rate, treatment_time):
+    if source_model == "SelectSeed":
+        air_kerma_str = iodine125_select_seed.AIR_KERMA_STRENGTH
+    else:
+        raise NotImplementedError
+
+    return calculate_total_dose(treatment_kerma_rate, air_kerma_str, treatment_time)
+
+
+def calculate_dose_rate_error_conversion_factor_with_know_caracteristics(source_model):
+    if source_model == "SelectSeed":
+        error = iodine125_select_seed.AIR_KERMA_STRENGTH_STD
+    else:
+        raise NotImplementedError
+
+    return error
+
+
+def calculate_total_dose_error_conversion_factor_with_know_caracteristics(source_model, treatment_time):
+    if source_model == "SelectSeed":
+        air_kerma_error = iodine125_select_seed.AIR_KERMA_STRENGTH_STD
+    else:
+        raise NotImplementedError
+
+    error = treatment_time * air_kerma_error
+
+    return error
