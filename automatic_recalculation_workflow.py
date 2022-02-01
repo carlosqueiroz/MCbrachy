@@ -3,13 +3,14 @@ import os
 import subprocess
 import sys
 
+from clean_output_data.clean_egs_brachy_output import clean_egs_brachy_output
 from clean_output_data.clean_topas_output import clean_topas_output
 from dicom_rt_context_extractor.sources_information_extraction import extract_all_sources_informations
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
-from dicom_rt_context_extractor.utils.search_instance_and_convert_coord_in_pixel import find_modality_in_folder,\
+from dicom_rt_context_extractor.utils.search_instance_and_convert_coord_in_pixel import find_modality_in_folder, \
     find_instance_in_folder
 from prostate_calcification_segmentation.calcification_segmentation import segmenting_calcification
-
+from generate_simulation_input_files.generate_simulation_input_files import generate_whole_egs_brachy_input_file
 from generate_simulation_input_files.generate_simulation_input_files import generate_whole_topas_input_file
 from root import ROOT
 
@@ -19,7 +20,7 @@ def get_aguments(argv):
     recalculation_algorithm = "topas"
     segment_calcification = False
     organ_contours_to_use = []
-    number_of_particles = 1000
+    number_of_particles = 1e7
 
     try:
         opts, args = getopt.getopt(argv, "i:o:a:r:s:p:")
@@ -104,18 +105,41 @@ if __name__ == "__main__":
                                                                        f"updated_{patient}_{studies}_RTSTRUCT.dcm"))
 
             if RECALCULATION_ALGORITHM == "egs_brachy":
-                # struct.generate_egs_phant_file_from_structures()
-                # plan.generate_transformation_files()
-                raise NotImplementedError
+                phant_saving_path = os.path.join(OUTPUT_PATH,
+                                                 f"mapping_{patient}_{studies}.bin")
+                transform_saving_path = os.path.join(OUTPUT_PATH,
+                                                 f"mapping_{patient}_{studies}.bin")
+                input_saving_path = os.path.join(OUTPUT_PATH,
+                                                 f"input_{patient}_{studies}.txt")
+                output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
+                try:
+                    generate_whole_egs_brachy_input_file(plan, NUMBER_OF_PARTICLES, ORGANS_TO_USE, transform_saving_path,
+                                                         'path_to_egs', phant_saving_path)
+                    bash_command = f"$egs_brachy -i {input_saving_path}"
+                    simulation = subprocess.run(bash_command.split())
+                    path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
+                    output_rt_dose = os.path.join(OUTPUT_PATH, f"topas_dose_{patient}_{studies}.dcm")
+                    output_rt_dose_err = os.path.join(OUTPUT_PATH, f"topas_err_{patient}_{studies}.dcm")
+                    output_rt_plan = os.path.join(OUTPUT_PATH, f"updated_plan_{patient}_{studies}.dcm")
+                    clean_egs_brachy_output(output_saving_path, path_to_rt_dose, rt_plan_path, plan,
+                                            output_rt_dose,
+                                            output_rt_dose_err, output_rt_plan, "Scaling factor gives total dose in GY",
+                                            "Warning, the scailing factor is the dose scailing factor error",
+                                            "workflow:0",
+                                            "EGS_BRACHY_TG186_DOSE")
+
+                except NotImplementedError:
+                    continue
 
             elif RECALCULATION_ALGORITHM == "topas":
-                index_saving_path = os.path.join(ROOT, "simulation_files",
+                index_saving_path = os.path.join(OUTPUT_PATH,
                                                  f"mapping_{patient}_{studies}.bin")
-                input_saving_path = os.path.join(ROOT, "simulation_files",
+                input_saving_path = os.path.join(OUTPUT_PATH,
                                                  f"input_{patient}_{studies}.txt")
                 output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
                 try:
                     string_to_add = "i:Ts/NumberOfThreads = -2 \ni:Ts/ShowHistoryCountAtInterval = 10000"
+                    os.chmod(os.path.join(ROOT, "simulation_files", "Muen.dat"), 0o777)
                     generate_whole_topas_input_file(plan, NUMBER_OF_PARTICLES, ORGANS_TO_USE, output_saving_path,
                                                     input_saving_path, index_saving_path,
                                                     output_type="binary", add=string_to_add)

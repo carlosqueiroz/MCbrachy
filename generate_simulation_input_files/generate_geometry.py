@@ -1,8 +1,11 @@
 import ntpath
 import os
 from typing import Tuple, Union, Any
-
 import numpy as np
+from topas_file_generator.LDR_brachy.LDR_physics import LDR_BRACHY_PHYSICS
+from egs_brachy_file_generator.geometries import from_egs_phant
+from generate_simulation_input_files.material_attribution import EGS_BRACHY_MATERIAL_CONVERTER
+from egs_brachy_file_generator.materials.materials import EGS_BRACHY_DENSITIES
 from generate_simulation_input_files.material_attribution import TOPAS_MATERIAL_CONVERTER
 from topas_file_generator.additional_materials.material_definition_table import MATERIAL_DEFINITION_TABLE
 from topas_file_generator.geometries.tg186_patient import TG186_PATIENT
@@ -29,6 +32,7 @@ def generate_3d_index_mapping_for_structures(structures: Structures, list_of_des
         new_index_3d_array = np.ma.array(new_index_3d_array, mask=binary_mask).filled(it)
         it += 1
 
+    new_index_3d_array = np.flip(new_index_3d_array, axis=0)
     if save_to_file:
         new_index_3d_array.astype(np.int16).tofile(path_to_save_to)
 
@@ -41,12 +45,9 @@ def generate_topas_input_string_and_3d_mapping(structures: Structures, list_of_d
     nb_z, nb_y, nb_x = structures.image_shape
     directory = os.path.dirname(path_to_save_to)
     file_name = ntpath.basename(path_to_save_to)
-    originx = structures.x_y_z_origin[0]
-    originy = structures.x_y_z_origin[1]
-    originz = structures.x_y_z_origin[2]
-    transx = originx + (nb_x * voxel_size_x - voxel_size_x) / 2
-    transy = originy + (nb_y * voxel_size_y - voxel_size_y) / 2
-    transz = originz - (nb_z * voxel_size_z - voxel_size_z) / 2
+    transx = (nb_x * voxel_size_x - voxel_size_x) / 2
+    transy = (nb_y * voxel_size_y - voxel_size_y) / 2
+    transz = - (nb_z * voxel_size_z - voxel_size_z) / 2
 
     tag_numbers = f"{len(list_of_desired_structures) + 1} 0"
     material_names = f"""{len(list_of_desired_structures) + 1} "TG186Water" """
@@ -75,15 +76,20 @@ def generate_topas_input_string_and_3d_mapping(structures: Structures, list_of_d
     generate_3d_index_mapping_for_structures(structures, list_of_desired_structures, save_to_file=True,
                                              path_to_save_to=path_to_save_to)
 
-    return material_definition + TG186_PATIENT.substitute(input_directory=directory, input_file_name=file_name,
-                                                          transx=transx,
-                                                          transy=transy, tranz=transz, rotx="0.", roty="0.",
-                                                          rotz="0.",
-                                                          nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
-                                                          voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_x,
-                                                          voxel_size_y=voxel_size_y,
-                                                          tag_numbers=tag_numbers, material_names=material_names,
-                                                          parent="World")
+    smaller_voxel_size = min([voxel_size_x, voxel_size_y, voxel_size_z])
+    material_and_physics = material_definition + LDR_BRACHY_PHYSICS.substitute(
+        smaller_voxel_size=smaller_voxel_size) + "\n\n "
+
+    return material_and_physics + TG186_PATIENT.substitute(input_directory=directory, input_file_name=file_name,
+                                                           transx=transx,
+                                                           transy=transy, transz=transz, rotx="0.", roty="0.",
+                                                           rotz="0.",
+                                                           nb_of_columns=nb_x, nb_of_rows=nb_y, nb_of_slices=nb_z,
+                                                           voxel_size_x=voxel_size_x, voxel_size_z=voxel_size_z,
+                                                           voxel_size_y=voxel_size_y,
+                                                           tag_numbers=tag_numbers, material_names=material_names,
+                                                           hlx=nb_x * voxel_size_x, hly=nb_y * voxel_size_y,
+                                                           hlz=nb_z * voxel_size_z)
 
 
 def generate_egs_phant_file_from_structures(structures: Structures, new_file_path: str, density_dict: dict) -> None:
@@ -106,7 +112,7 @@ def generate_egs_phant_file_from_structures(structures: Structures, new_file_pat
     number_of_structures = len(density_dict.keys())
     image_shape = structures.image_shape
     _, mask_dict = structures.get_3d_image_with_all_masks()
-    density_tensor = np.ones((image_shape[0], image_shape[1], image_shape[2]))
+    density_tensor = np.ones((image_shape[0], image_shape[1], image_shape[2])) * 0.998
     struct_tensor = np.ones((image_shape[0], image_shape[1], image_shape[2]))
     for i in range(2, number_of_structures + 1):
         current_struct = density_dict[i]["structure"]
@@ -217,3 +223,21 @@ def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures) -> Tupl
     z_bounds = -(np.arange(nb_z, -1, -1) * spacing_z) + origin_z
 
     return x_bounds, y_bounds, z_bounds
+
+
+def generate_egs_brachy_geo_string_and_phant(structures: Structures, new_file_path: str, list_of_structures: list,
+                                             source_geo: str, egs_folder_path):
+
+    density_dict = {1: {"name_in_egs": "WATER_0.998", "structure": "body", "density": 0.998}}
+    it = 2
+    for struct in list_of_structures:
+        density_dict[it] = {"name_in_egs": EGS_BRACHY_MATERIAL_CONVERTER[struct],
+                           "structure": struct,
+                           "density": EGS_BRACHY_DENSITIES[EGS_BRACHY_MATERIAL_CONVERTER[struct]]}
+        it += 1
+
+    generate_egs_phant_file_from_structures(structures, new_file_path, density_dict)
+
+    return from_egs_phant.EGS_BRACHY_GEO_FROM_PHANT.substitute(egs_phant_compress_path=new_file_path + ".gz",
+                                                               path_to_egs_folder=egs_folder_path,
+                                                               source_geo=source_geo)

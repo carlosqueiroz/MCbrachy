@@ -19,5 +19,5 @@ RUN apt install -y git &&\
     ls -a &&\
     ./venv/bin/pip install -U -r ./requirements.txt
 
-ENTRYPOINT ["./venv/bin/python", "automatic_recalculation_workflow.py", "-o", "rectum", "-o", "vessie", "-o", "uretre", "-o", "rectum", "-o", "calcification", "-a", "topas",  "-s", "True",  "-r", "False"]
+ENTRYPOINT ["./venv/bin/python", "automatic_recalculation_workflow.py", "-o", "prostate", "-o", "vessie", "-o", "uretre", "-o", "rectum", "-o", "calcification", "-a", "topas",  "-s", "True",  "-r", "False"]
 

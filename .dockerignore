@@ -99,5 +99,6 @@ cmake-build-*/
 # End of https://www.toptal.com/developers/gitignore/api/pycharm
 
 /venv/**
-/venve
+/venv
 /simulation_files/**
+!/simulation_files/Muen.dat
