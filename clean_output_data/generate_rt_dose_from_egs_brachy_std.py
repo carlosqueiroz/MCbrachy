@@ -19,7 +19,7 @@ def genetate_rt_dose_from_egs_brachy_std(path_to_3ddose, path_to_original_rt_dos
     else:
         raise NotImplementedError
 
-    egs_output = DoseFile(path_to_3ddose)
+    egs_output = DoseFile(path_to_3ddose, load_uncertainty=True)
     pixel_data = np.flip(egs_output.uncertainty, axis=0)
     scaling_factor = calculate_total_dose_error_conversion_factor_with_know_caracteristics(seed_model, half_life * 24)
     voxel_size = (egs_output.spacing[0][0], egs_output.spacing[1][0], egs_output.spacing[2][0])

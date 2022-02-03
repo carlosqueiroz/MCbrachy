@@ -10,6 +10,7 @@ from generate_simulation_input_files.generate_geometry import generate_egs_brach
 from egs_brachy_file_generator.run_context import EGS_BRACHY_RUN_CONTEXT
 from generate_simulation_input_files.generate_scorer import generate_egs_brachy_scorer
 
+
 def generate_whole_topas_input_file(plan: LDRBrachyPlan, total_particles: int, list_of_desired_structures, output_path,
                                     path_to_save_input_file,
                                     path_to_save_index, output_type, add=""):
@@ -41,7 +42,7 @@ def generate_whole_topas_input_file(plan: LDRBrachyPlan, total_particles: int, l
 
 
 def generate_whole_egs_brachy_input_file(plan: LDRBrachyPlan, total_particles: int, list_of_desired_structures,
-                                         path_to_transform_file,
+                                         path_to_transform_file, path_to_save_input_file,
                                          pah_to_egs_folder, egs_phant_file_path, batches=1, chunk=1, add=""):
     run_context = EGS_BRACHY_RUN_CONTEXT.substitute(nb_photon=total_particles, nb_batch=batches, nb_chunk=chunk,
                                                     egs_brachy_folder=pah_to_egs_folder)
@@ -52,5 +53,6 @@ def generate_whole_egs_brachy_input_file(plan: LDRBrachyPlan, total_particles: i
     physics = LDR_physics.EGS_BRACHY_LDR_PHYSICS.substitute(path_to_egs_folder=pah_to_egs_folder)
     scorer = generate_egs_brachy_scorer(list_of_desired_structures, pah_to_egs_folder)
 
-    return run_context + geo_def + source_def + scorer + physics + add
-
+    text_file = open(path_to_save_input_file, "w")
+    text_file.write(run_context + geo_def + source_def + scorer + physics + add)
+    text_file.close()

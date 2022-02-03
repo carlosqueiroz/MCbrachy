@@ -1,10 +1,13 @@
-FROM saoue66/topas:0.1
+FROM saoue66/egs_brachy:0
 
 ARG GIT_USER
 ARG GIT_PASS
 
-ENV topas="/topas/topas/bin/topas"
-ENV TOPAS_G4_DATA_DIR="/G4Data"
+ENV EGS_HOME="/EGSnrc_CLRP/egs_home/"
+ENV EGS_CONFIG="/EGSnrc_CLRP/HEN_HOUSE/specs/linux.conf"
+ENV EGS_BATCH_SYSTEM="at"
+ENV HEN_HOUSE="/EGSnrc_CLRP/HEN_HOUSE/"
+ENV egs_brachy="/EGSnrc_CLRP/egs_home/bin/linux/egs_brachy"
 
 WORKDIR /workflow
 
@@ -19,5 +22,5 @@ RUN apt install -y git &&\
     ls -a &&\
     ./venv/bin/pip install -U -r ./requirements.txt
 
-ENTRYPOINT ["./venv/bin/python", "automatic_recalculation_workflow.py", "-o", "prostate", "-o", "vessie", "-o", "uretre", "-o", "rectum", "-o", "calcification", "-a", "topas",  "-s", "True",  "-r", "False"]
+ENTRYPOINT ["./venv/bin/python", "automatic_recalculation_workflow.py", "-o", "prostate", "-o", "vessie", "-o", "uretre", "-o", "rectum", "-o", "calcification", "-a", "egs_brachy",  "-s", "True",  "-r", "False"]
 

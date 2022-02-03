@@ -1,7 +1,7 @@
 import numpy as np
 from dicom_rt_context_extractor.storage_objects.rt_plan_storage_classes import Sources, LDRBrachyPlan
 from topas_file_generator.LDR_brachy.seed_templates import iodine125_select_seed
-from string import Template
+from egs_brachy_file_generator.LDR_brachy.seed_templates import iodine125_select_seed
 
 
 def generate_topas_seed_string(plan: LDRBrachyPlan, photon_per_seed: int, struct_center_coords):
@@ -48,10 +48,10 @@ def generate_egs_brachy_source_definition(source: Sources, new_file_path: str, p
     isotope = source.source_isotope_name
     generate_transformation_file_for_sources(source, new_file_path)
     if manufacturer == "Nucletron B.V." and isotope == "I-125":
-        source_def = egs_select_seed_template.substitute(path_to_egs_folder=path_to_egs_folder,
-                                                         transfomation_file_path=new_file_path)
-        source_geo = egs_select_seed_geo.substitute(path_to_egs_folder=path_to_egs_folder,
-                                                    transfomation_file_path=new_file_path)
+        source_def = iodine125_select_seed.EGS_BRACHY_SOURCE_DEF.substitute(path_to_egs_folder=path_to_egs_folder,
+                                                                            transfomation_file_path=new_file_path)
+        source_geo = iodine125_select_seed.EGS_BRACHY_SOURCE_GEO.substitute(path_to_egs_folder=path_to_egs_folder,
+                                                                            transfomation_file_path=new_file_path)
 
     else:
         raise NotImplementedError

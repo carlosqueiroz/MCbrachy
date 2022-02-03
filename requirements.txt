@@ -5,5 +5,6 @@ numpy==1.20.3
 prostate-calcification-segmentation @ git+https://gitlab.chudequebec.ca/sam23/prostatecalcificationsegmentation.git
 topas-file-generator @ git+https://gitlab.chudequebec.ca/sam23/topasfilegenerator.git
 egs-brachy-file-generator @ git+https://gitlab.chudequebec.ca/sam23/egs_brachy_file_generator.git
+py3ddos @ git+https://github.com/smichi23/py3ddose.git
 topas2numpy~=0.2.0
 pydicom~=2.1.2

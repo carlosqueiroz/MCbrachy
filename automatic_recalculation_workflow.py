@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 
+from shutil import copy, move
 from clean_output_data.clean_egs_brachy_output import clean_egs_brachy_output
 from clean_output_data.clean_topas_output import clean_topas_output
 from dicom_rt_context_extractor.sources_information_extraction import extract_all_sources_informations
@@ -106,20 +107,23 @@ if __name__ == "__main__":
 
             if RECALCULATION_ALGORITHM == "egs_brachy":
                 phant_saving_path = os.path.join(OUTPUT_PATH,
-                                                 f"mapping_{patient}_{studies}.bin")
+                                                 f"egs_phant_{patient}_{studies}.egsphant")
                 transform_saving_path = os.path.join(OUTPUT_PATH,
-                                                 f"mapping_{patient}_{studies}.bin")
-                input_saving_path = os.path.join(OUTPUT_PATH,
-                                                 f"input_{patient}_{studies}.txt")
-                output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
+                                                 f"source_transform_{patient}_{studies}")
+                input_saving_path = os.path.join(r'/EGSnrc_CLRP/egs_home/egs_brachy',
+                                                 f"input_{patient}_{studies}.egsinp")
+                output_saving_path = os.path.join(OUTPUT_PATH, f"input_{patient}_{studies}.phantom.3ddose")
                 try:
-                    generate_whole_egs_brachy_input_file(plan, NUMBER_OF_PARTICLES, ORGANS_TO_USE, transform_saving_path,
-                                                         'path_to_egs', phant_saving_path)
-                    bash_command = f"$egs_brachy -i {input_saving_path}"
+                    generate_whole_egs_brachy_input_file(plan, int(NUMBER_OF_PARTICLES), ORGANS_TO_USE, transform_saving_path,
+                                                         input_saving_path, r'/EGSnrc_CLRP/egs_home/egs_brachy',
+                                                         phant_saving_path)
+                    bash_command = f"/EGSnrc_CLRP/egs_home/bin/linux/egs_brachy -i input_{patient}_{studies}.egsinp"
                     simulation = subprocess.run(bash_command.split())
+                    move(input_saving_path, os.path.join(OUTPUT_PATH, f"input_{patient}_{studies}.egsinp"))
+                    copy(rf"/EGSnrc_CLRP/egs_home/egs_brachy/input_{patient}_{studies}.phantom.3ddose", output_saving_path)
                     path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
-                    output_rt_dose = os.path.join(OUTPUT_PATH, f"topas_dose_{patient}_{studies}.dcm")
-                    output_rt_dose_err = os.path.join(OUTPUT_PATH, f"topas_err_{patient}_{studies}.dcm")
+                    output_rt_dose = os.path.join(OUTPUT_PATH, f"egs_dose_{patient}_{studies}.dcm")
+                    output_rt_dose_err = os.path.join(OUTPUT_PATH, f"egs_err_{patient}_{studies}.dcm")
                     output_rt_plan = os.path.join(OUTPUT_PATH, f"updated_plan_{patient}_{studies}.dcm")
                     clean_egs_brachy_output(output_saving_path, path_to_rt_dose, rt_plan_path, plan,
                                             output_rt_dose,

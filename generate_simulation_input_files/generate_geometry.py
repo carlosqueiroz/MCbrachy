@@ -210,9 +210,9 @@ def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures) -> Tupl
 
     :return: the three list of voxel bounds in x y and z.
     """
-    spacing_z = structures.z_y_x_spacing[2]
+    spacing_z = structures.z_y_x_spacing[0]
     spacing_y = structures.z_y_x_spacing[1]
-    spacing_x = structures.z_y_x_spacing[0]
+    spacing_x = structures.z_y_x_spacing[2]
     origin_x = structures.x_y_z_origin[0] - spacing_x / 2
     origin_y = structures.x_y_z_origin[1] - spacing_y / 2
     origin_z = structures.x_y_z_origin[2] - spacing_z / 2
@@ -227,17 +227,16 @@ def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures) -> Tupl
 
 def generate_egs_brachy_geo_string_and_phant(structures: Structures, new_file_path: str, list_of_structures: list,
                                              source_geo: str, egs_folder_path):
-
     density_dict = {1: {"name_in_egs": "WATER_0.998", "structure": "body", "density": 0.998}}
     it = 2
     for struct in list_of_structures:
         density_dict[it] = {"name_in_egs": EGS_BRACHY_MATERIAL_CONVERTER[struct],
-                           "structure": struct,
-                           "density": EGS_BRACHY_DENSITIES[EGS_BRACHY_MATERIAL_CONVERTER[struct]]}
+                            "structure": struct,
+                            "density": EGS_BRACHY_DENSITIES[EGS_BRACHY_MATERIAL_CONVERTER[struct]]}
         it += 1
 
     generate_egs_phant_file_from_structures(structures, new_file_path, density_dict)
 
-    return from_egs_phant.EGS_BRACHY_GEO_FROM_PHANT.substitute(egs_phant_compress_path=new_file_path + ".gz",
+    return from_egs_phant.EGS_BRACHY_GEO_FROM_PHANT.substitute(egs_phant_compress_path=new_file_path,
                                                                path_to_egs_folder=egs_folder_path,
                                                                source_geo=source_geo)
