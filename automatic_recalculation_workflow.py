@@ -21,7 +21,7 @@ def get_aguments(argv):
     recalculation_algorithm = "topas"
     segment_calcification = False
     organ_contours_to_use = []
-    number_of_particles = 1e7
+    number_of_particles = 1e6
 
     try:
         opts, args = getopt.getopt(argv, "i:o:a:r:s:p:")
@@ -109,18 +109,23 @@ if __name__ == "__main__":
                 phant_saving_path = os.path.join(OUTPUT_PATH,
                                                  f"egs_phant_{patient}_{studies}.egsphant")
                 transform_saving_path = os.path.join(OUTPUT_PATH,
-                                                 f"source_transform_{patient}_{studies}")
+                                                     f"source_transform_{patient}_{studies}")
                 input_saving_path = os.path.join(r'/EGSnrc_CLRP/egs_home/egs_brachy',
                                                  f"input_{patient}_{studies}.egsinp")
                 output_saving_path = os.path.join(OUTPUT_PATH, f"input_{patient}_{studies}.phantom.3ddose")
                 try:
-                    generate_whole_egs_brachy_input_file(plan, int(NUMBER_OF_PARTICLES), ORGANS_TO_USE, transform_saving_path,
-                                                         input_saving_path, r'/EGSnrc_CLRP/egs_home/egs_brachy',
-                                                         phant_saving_path)
-                    bash_command = f"/EGSnrc_CLRP/egs_home/bin/linux/egs_brachy -i input_{patient}_{studies}.egsinp"
-                    simulation = subprocess.run(bash_command.split())
+                    offsets = generate_whole_egs_brachy_input_file(plan, int(NUMBER_OF_PARTICLES), ORGANS_TO_USE,
+                                                                   transform_saving_path,
+                                                                   input_saving_path,
+                                                                   r'/EGSnrc_CLRP/egs_home/egs_brachy',
+                                                                   phant_saving_path, crop=True)
+                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 2 -f -d 3 -c"""
+                    splited_bash = bash_command.split()
+                    splited_bash.append(f"egs_brachy -i input_{patient}_{studies}")
+                    simulation = subprocess.run(splited_bash)
                     move(input_saving_path, os.path.join(OUTPUT_PATH, f"input_{patient}_{studies}.egsinp"))
-                    copy(rf"/EGSnrc_CLRP/egs_home/egs_brachy/input_{patient}_{studies}.phantom.3ddose", output_saving_path)
+                    copy(rf"/EGSnrc_CLRP/egs_home/egs_brachy/input_{patient}_{studies}.phantom.3ddose",
+                         output_saving_path)
                     path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
                     output_rt_dose = os.path.join(OUTPUT_PATH, f"egs_dose_{patient}_{studies}.dcm")
                     output_rt_dose_err = os.path.join(OUTPUT_PATH, f"egs_err_{patient}_{studies}.dcm")

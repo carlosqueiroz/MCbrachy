@@ -1,3 +1,4 @@
+import gzip
 import ntpath
 import os
 from typing import Tuple, Union, Any
@@ -92,7 +93,8 @@ def generate_topas_input_string_and_3d_mapping(structures: Structures, list_of_d
                                                            hlz=nb_z * voxel_size_z)
 
 
-def generate_egs_phant_file_from_structures(structures: Structures, new_file_path: str, density_dict: dict) -> None:
+def generate_egs_phant_file_from_structures(structures: Structures, new_file_path: str, density_dict: dict,
+                                            crop=False, crop_margin=20, sym=False):
     """
     This method will produce a egs_phant file from all the contour specified in the density_dict.
 
@@ -104,14 +106,30 @@ def generate_egs_phant_file_from_structures(structures: Structures, new_file_pat
         density: the density of the material
         name_in_egs: the name that will be written in the egs_phant file
 
+    :param sym:
+    :param crop_margin:
+    :param crop:
     :param structures:
     :param new_file_path:
     :param density_dict:
     """
 
     number_of_structures = len(density_dict.keys())
-    image_shape = structures.image_shape
-    _, mask_dict = structures.get_3d_image_with_all_masks()
+    if crop:
+        list_of_mask_names = []
+        for i in range(2, number_of_structures + 1):
+            list_of_mask_names.append(density_dict[i]["structure"])
+
+        mask_dict, offsetz, offsety, offsetx = crop_phantom_to_structures(structures, list_of_mask_names,
+                                                                          crop_margin, sym)
+        image_shape = mask_dict[list_of_mask_names[0]].shape
+        print("cropped:",image_shape)
+
+    else:
+        image_shape = structures.image_shape
+        _, mask_dict = structures.get_3d_image_with_all_masks()
+        offsetz, offsety, offsetx = 0, 0, 0
+
     density_tensor = np.ones((image_shape[0], image_shape[1], image_shape[2])) * 0.998
     struct_tensor = np.ones((image_shape[0], image_shape[1], image_shape[2]))
     for i in range(2, number_of_structures + 1):
@@ -123,12 +141,74 @@ def generate_egs_phant_file_from_structures(structures: Structures, new_file_pat
         struct_tensor = np.ma.array(struct_tensor, mask=np.flip(mask_dict[current_struct], axis=0)).filled(
             current_index)
 
-    x_bounds, y_bounds, z_bounds = _generate_x_y_and_z_list_of_voxel_boundaries(structures)
-    _make_egs_phant(structures, new_file_path, density_dict, x_bounds / 10, y_bounds / 10, z_bounds / 10, struct_tensor,
+    x_bounds, y_bounds, z_bounds = _generate_x_y_and_z_list_of_voxel_boundaries(structures, image_shape, [offsetz,
+                                                                                                          offsety,
+                                                                                                          offsetx])
+    _make_egs_phant(image_shape, new_file_path, density_dict, x_bounds / 10, y_bounds / 10, z_bounds / 10,
+                    struct_tensor,
                     density_tensor)
 
+    return offsetz, offsety, offsetx
 
-def _make_egs_phant(structures: Structures, new_file_path: str, density_dict: dict, x_bounds: list, y_bounds: list,
+
+def crop_phantom_to_structures(structures: Structures, list_of_mask_names, crop_margin=20, sym=False):
+    _, mask_dict = structures.get_3d_image_with_all_masks()
+
+    image_shape = structures.image_shape
+    spacing_z = structures.z_y_x_spacing[0]
+    spacing_y = structures.z_y_x_spacing[1]
+    spacing_x = structures.z_y_x_spacing[2]
+    total_mask = np.zeros((image_shape[0], image_shape[1], image_shape[2]))
+    for mask_name in list_of_mask_names:
+        total_mask += mask_dict[mask_name]
+
+    true_points = np.argwhere(total_mask)
+    min_z = true_points[:, 0].min() - int(crop_margin / spacing_z)
+    if min_z < 0:
+        min_z = 0
+    max_z = true_points[:, 0].max() + int(crop_margin / spacing_z)
+    if max_z >= image_shape[0] - 1:
+        max_z = image_shape[0] - 2
+    min_y = true_points[:, 1].min() - int(crop_margin / spacing_y)
+    if min_y < 0:
+        min_y = 0
+    max_y = true_points[:, 1].max() + int(crop_margin / spacing_y)
+    if max_y >= image_shape[1] - 1:
+        max_y = image_shape[1] - 2
+    min_x = true_points[:, 2].min() - int(crop_margin / spacing_x)
+    if min_x < 0:
+        min_x = 0
+    max_x = true_points[:, 2].max() + int(crop_margin / spacing_y)
+    if max_x >= image_shape[2] - 1:
+        max_x = image_shape[2] - 2
+
+    if sym:
+        i_min = max(min_z, image_shape[0] - max_z)
+        j_min = max(min_y, image_shape[1] - max_y)
+        k_min = max(min_x, image_shape[2] - max_x)
+        i_max = max(-min_z, max_z - image_shape[0])
+        j_max = max(-min_y, max_y - image_shape[1])
+        k_max = max(-min_x, max_x - image_shape[2])
+    else:
+        i_min = min_z
+        j_min = min_y
+        k_min = min_x
+        i_max = max_z - image_shape[0]
+        j_max = max_y - image_shape[1]
+        k_max = max_x - image_shape[2]
+
+    offset_z = -(i_min - 1) * spacing_z
+    offset_y = (j_min - 1) * spacing_y
+    offset_x = (k_min - 1) * spacing_x
+
+    cropped_masks = {}
+    for mask_name in list_of_mask_names:
+        cropped_masks[mask_name] = mask_dict[mask_name][i_min: i_max + 1, j_min: j_max + 1, k_min: k_max + 1]
+
+    return cropped_masks, offset_z, offset_y, offset_x
+
+
+def _make_egs_phant(image_shape, new_file_path: str, density_dict: dict, x_bounds: list, y_bounds: list,
                     z_bounds: list,
                     struct_tensor: np.ndarray, density_tensor: np.ndarray) -> None:
     """
@@ -145,8 +225,7 @@ def _make_egs_phant(structures: Structures, new_file_path: str, density_dict: di
     :return:
     """
     number_of_structures = len(density_dict.keys())
-    image_shape = structures.image_shape
-    vocab_file = open(new_file_path, "w")
+    vocab_file = open(new_file_path, "a+")
 
     vocab_file.write(f"{number_of_structures}\n")
     for i in range(1, len(density_dict.keys()) + 1):
@@ -199,11 +278,23 @@ def _make_egs_phant(structures: Structures, new_file_path: str, density_dict: di
     if len(y_bounds) % 3 == 2:
         vocab_file.write(f"  {flat_density[-2]}         {flat_density[-1]}        \n")
 
+    g_zip = gzip.open(f'{new_file_path}.gz', 'wb')
+    g_zip.writelines(vocab_file)
+    g_zip.close()
     vocab_file.close()
+    input_phant = open(new_file_path, 'rb')
+    s = input_phant.read()
+    input_phant.close()
+
+    output = gzip.GzipFile(f"{new_file_path}.gz", 'wb')
+    output.write(s)
+    output.close()
 
 
-def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures) -> Tuple[Union[float, Any], Union[float, Any],
-                                                                                  Union[float, Any]]:
+def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures, image_shape, all_offsets) -> Tuple[
+    Union[float, Any],
+    Union[float, Any],
+    Union[float, Any]]:
     """
     This methods generates the upper and lower bounds of every voxels in x y and z axis.
     Reference point is the patient coordinates and values are in mm
@@ -213,11 +304,11 @@ def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures) -> Tupl
     spacing_z = structures.z_y_x_spacing[0]
     spacing_y = structures.z_y_x_spacing[1]
     spacing_x = structures.z_y_x_spacing[2]
-    origin_x = structures.x_y_z_origin[0] - spacing_x / 2
-    origin_y = structures.x_y_z_origin[1] - spacing_y / 2
-    origin_z = structures.x_y_z_origin[2] - spacing_z / 2
+    origin_x = structures.x_y_z_origin[0] + all_offsets[2] - spacing_x / 2
+    origin_y = structures.x_y_z_origin[1] + all_offsets[1] - spacing_y / 2
+    origin_z = structures.x_y_z_origin[2] + all_offsets[0] - spacing_z / 2
 
-    nb_z, nb_y, nb_x = structures.image_shape
+    nb_z, nb_y, nb_x = image_shape
     x_bounds = (np.arange(0, nb_x + 1) * spacing_x) + origin_x
     y_bounds = (np.arange(0, nb_y + 1) * spacing_y) + origin_y
     z_bounds = -(np.arange(nb_z, -1, -1) * spacing_z) + origin_z
@@ -226,7 +317,7 @@ def _generate_x_y_and_z_list_of_voxel_boundaries(structures: Structures) -> Tupl
 
 
 def generate_egs_brachy_geo_string_and_phant(structures: Structures, new_file_path: str, list_of_structures: list,
-                                             source_geo: str, egs_folder_path):
+                                             source_geo: str, egs_folder_path, crop=False):
     density_dict = {1: {"name_in_egs": "WATER_0.998", "structure": "body", "density": 0.998}}
     it = 2
     for struct in list_of_structures:
@@ -235,8 +326,8 @@ def generate_egs_brachy_geo_string_and_phant(structures: Structures, new_file_pa
                             "density": EGS_BRACHY_DENSITIES[EGS_BRACHY_MATERIAL_CONVERTER[struct]]}
         it += 1
 
-    generate_egs_phant_file_from_structures(structures, new_file_path, density_dict)
+    offsets = generate_egs_phant_file_from_structures(structures, new_file_path, density_dict, crop=crop)
 
-    return from_egs_phant.EGS_BRACHY_GEO_FROM_PHANT.substitute(egs_phant_compress_path=new_file_path,
+    return from_egs_phant.EGS_BRACHY_GEO_FROM_PHANT.substitute(egs_phant_compress_path=new_file_path + ".gz",
                                                                path_to_egs_folder=egs_folder_path,
-                                                               source_geo=source_geo)
+                                                               source_geo=source_geo), offsets
