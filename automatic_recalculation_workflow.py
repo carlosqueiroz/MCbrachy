@@ -119,7 +119,7 @@ if __name__ == "__main__":
                                                                    input_saving_path,
                                                                    r'/EGSnrc_CLRP/egs_home/egs_brachy',
                                                                    phant_saving_path, crop=True)
-                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 12 -f -d 5 -c"""
+                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 10 -f -d 5 -c"""
                     splited_bash = bash_command.split()
                     splited_bash.append(f"egs_brachy -i input_{patient}_{studies}")
                     simulation = subprocess.run(splited_bash)
