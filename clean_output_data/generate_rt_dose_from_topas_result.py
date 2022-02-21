@@ -4,7 +4,7 @@ from dicom_rt_context_extractor.storage_objects.rt_plan_storage_classes import L
 from mcdose2dicom import create_rt_dose_from_scratch
 from mcdose2dicom.adapt_rt_dose_to_existing_dicoms import adapt_rt_dose_to_existing_rt_dose_grid,\
     add_reference_in_rt_plan
-from clean_output_data.calculate_dose_convertion_factor import \
+from clean_output_data.calculate_dose_convertion_factor_topas import \
     calculate_total_dose_conversion_factor_with_know_caracteristics
 
 
@@ -32,7 +32,7 @@ def genetate_rt_dose_from_topas_result(path_to_bin_file, path_to_original_rt_dos
     rt_dose = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=scaling_factor,
                                                         dose_type="PHYSICAL", dose_comment=dose_comment,
                                                         software=software, dose_units="GY")
-    rt_dose.add_dose_grid(pixel_data, voxel_size, False)
+    rt_dose.add_dose_grid(pixel_data, voxel_size, False, True)
     rt_dose.build()
     rt_dose.save_rt_dose_to(rt_dose_saving_path)
 

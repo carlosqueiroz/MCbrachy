@@ -43,7 +43,7 @@ def generate_whole_topas_input_file(plan: LDRBrachyPlan, total_particles: int, l
 
 def generate_whole_egs_brachy_input_file(plan: LDRBrachyPlan, total_particles: int, list_of_desired_structures,
                                          path_to_transform_file, path_to_save_input_file,
-                                         pah_to_egs_folder, egs_phant_file_path, batches=1, chunk=1, add="", crop=False):
+                                         pah_to_egs_folder, egs_phant_file_path, batches=2, chunk=10, add="", crop=False):
     run_context = EGS_BRACHY_RUN_CONTEXT.substitute(nb_photon=total_particles, nb_batch=batches, nb_chunk=chunk,
                                                     egs_brachy_folder=pah_to_egs_folder, accuracy=1)
     sources = plan.list_of_sources[0]

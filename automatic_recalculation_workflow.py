@@ -21,7 +21,7 @@ def get_aguments(argv):
     recalculation_algorithm = "topas"
     segment_calcification = False
     organ_contours_to_use = []
-    number_of_particles = 1e6
+    number_of_particles = 1e9
 
     try:
         opts, args = getopt.getopt(argv, "i:o:a:r:s:p:")
@@ -106,36 +106,38 @@ if __name__ == "__main__":
                                                                        f"updated_{patient}_{studies}_RTSTRUCT.dcm"))
 
             if RECALCULATION_ALGORITHM == "egs_brachy":
-                phant_saving_path = os.path.join(OUTPUT_PATH,
+                phant_saving_path = os.path.join(ROOT, "simulation_files",
                                                  f"egs_phant_{patient}_{studies}.egsphant")
-                transform_saving_path = os.path.join(OUTPUT_PATH,
+                transform_saving_path = os.path.join(ROOT, "simulation_files",
                                                      f"source_transform_{patient}_{studies}")
                 input_saving_path = os.path.join(r'/EGSnrc_CLRP/egs_home/egs_brachy',
                                                  f"input_{patient}_{studies}.egsinp")
-                output_saving_path = os.path.join(OUTPUT_PATH, f"input_{patient}_{studies}.phantom.3ddose")
+                output_saving_path = os.path.join(ROOT, "simulation_files", f"input_{patient}_{studies}.phantom.3ddose")
                 try:
                     offsets = generate_whole_egs_brachy_input_file(plan, int(NUMBER_OF_PARTICLES), ORGANS_TO_USE,
                                                                    transform_saving_path,
                                                                    input_saving_path,
                                                                    r'/EGSnrc_CLRP/egs_home/egs_brachy',
                                                                    phant_saving_path, crop=True)
-                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 2 -f -d 3 -c"""
+                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 12 -f -d 5 -c"""
                     splited_bash = bash_command.split()
                     splited_bash.append(f"egs_brachy -i input_{patient}_{studies}")
                     simulation = subprocess.run(splited_bash)
-                    move(input_saving_path, os.path.join(OUTPUT_PATH, f"input_{patient}_{studies}.egsinp"))
                     copy(rf"/EGSnrc_CLRP/egs_home/egs_brachy/input_{patient}_{studies}.phantom.3ddose",
                          output_saving_path)
                     path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
                     output_rt_dose = os.path.join(OUTPUT_PATH, f"egs_dose_{patient}_{studies}.dcm")
                     output_rt_dose_err = os.path.join(OUTPUT_PATH, f"egs_err_{patient}_{studies}.dcm")
                     output_rt_plan = os.path.join(OUTPUT_PATH, f"updated_plan_{patient}_{studies}.dcm")
+                    position = [offsets[0] + struct.x_y_z_origin[2],
+                                offsets[1]+ struct.x_y_z_origin[1],
+                                offsets[2] + struct.x_y_z_origin[0]]
                     clean_egs_brachy_output(output_saving_path, path_to_rt_dose, rt_plan_path, plan,
                                             output_rt_dose,
                                             output_rt_dose_err, output_rt_plan, "Scaling factor gives total dose in GY",
                                             "Warning, the scailing factor is the dose scailing factor error",
-                                            "workflow:0",
-                                            "EGS_BRACHY_TG186_DOSE")
+                                            "recalculation_workflow_egs_brachy:0.1",
+                                            "EGS_BRACHY_TG186_DOSE", position=position)
 
                 except NotImplementedError:
                     continue
