@@ -25,6 +25,7 @@ def genetate_rt_dose_from_topas_result(path_to_bin_file, path_to_original_rt_dos
     scaling_factor = calculate_total_dose_conversion_factor_with_know_caracteristics(seed_model,
                                                                                      air_kerma_rate,
                                                                                      half_life * 24)
+    scaling_factor = scaling_factor / float(rt_plan.list_of_sources[0].positions.shape[0])
     voxel_size = (topas_output.dimensions[0].bin_width * 10, topas_output.dimensions[1].bin_width * 10,
                   topas_output.dimensions[2].bin_width * 10)
 

@@ -28,6 +28,7 @@ def genetate_rt_dose_from_egs_brachy_result(path_to_3ddose, path_to_original_rt_
     scaling_factor = calculate_total_dose_conversion_factor_with_know_caracteristics(seed_model,
                                                                                      air_kerma_rate,
                                                                                      half_life * 24)
+    scaling_factor = scaling_factor / float(rt_plan.list_of_sources[0].positions.shape[0])
     voxel_size = (10 * egs_output.spacing[2][0], 10 * egs_output.spacing[1][0], 10 * egs_output.spacing[0][0])
     dose_comment += f" Factor from dose/histories to total dose = {scaling_factor}"
     rt_dose = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=scaling_factor,
