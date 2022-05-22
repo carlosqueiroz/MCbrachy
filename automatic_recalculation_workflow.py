@@ -14,14 +14,14 @@ from prostate_calcification_segmentation.calcification_segmentation import segme
 from generate_simulation_input_files.generate_simulation_input_files import generate_whole_egs_brachy_input_file
 from generate_simulation_input_files.generate_simulation_input_files import generate_whole_topas_input_file
 from root import ROOT
-
+from simulation_runners import SimulationRunners
 
 def get_aguments(argv):
     restructuring = False
     recalculation_algorithm = "topas"
     segment_calcification = False
     organ_contours_to_use = []
-    number_of_particles = 1e9
+    number_of_particles = 1e4
 
     try:
         opts, args = getopt.getopt(argv, "i:o:a:r:s:p:")
@@ -82,6 +82,8 @@ if __name__ == "__main__":
     SEGMENT_CALCIFICATIONS, NUMBER_OF_PARTICLES = get_aguments(sys.argv[1:-2])
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
+    simulation_runner = SimulationRunners(os.path.join(ROOT, "simulation_files"), nb_of_treads=1, waiting_time=5,
+                                          egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
@@ -119,12 +121,7 @@ if __name__ == "__main__":
                                                                    input_saving_path,
                                                                    r'/EGSnrc_CLRP/egs_home/egs_brachy',
                                                                    phant_saving_path, crop=True)
-                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 10 -f -d 5 -c"""
-                    splited_bash = bash_command.split()
-                    splited_bash.append(f"egs_brachy -i input_{patient}_{studies}")
-                    simulation = subprocess.run(splited_bash)
-                    copy(rf"/EGSnrc_CLRP/egs_home/egs_brachy/input_{patient}_{studies}.phantom.3ddose",
-                         output_saving_path)
+                    simulation_runner.launch_simulation(RECALCULATION_ALGORITHM, os.path.join(ROOT, "simulation_files"))
                     path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
                     output_rt_dose = os.path.join(OUTPUT_PATH, f"egs_dose_{patient}_{studies}.dcm")
                     output_rt_dose_err = os.path.join(OUTPUT_PATH, f"egs_err_{patient}_{studies}.dcm")
@@ -154,10 +151,7 @@ if __name__ == "__main__":
                     generate_whole_topas_input_file(plan, NUMBER_OF_PARTICLES, ORGANS_TO_USE, output_saving_path,
                                                     input_saving_path, index_saving_path,
                                                     output_type="binary", add=string_to_add)
-                    bash_command = f"/topas/topas/bin/topas {input_saving_path}"
-                    os.chmod(input_saving_path, 0o777)
-                    os.chmod(index_saving_path, 0o777)
-                    simulation = subprocess.run(bash_command.split())
+                    simulation_runner.launch_simulation(RECALCULATION_ALGORITHM, os.path.join(ROOT, "simulation_files"))
                     path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
                     output_rt_dose = os.path.join(OUTPUT_PATH, f"topas_dose_{patient}_{studies}.dcm")
                     output_rt_dose_err = os.path.join(OUTPUT_PATH, f"topas_err_{patient}_{studies}.dcm")
