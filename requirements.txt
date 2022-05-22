@@ -1,18 +1,10 @@
-certifi==2020.12.5
-chardet==4.0.0
-cycler==0.10.0
-dicom-anonymiseur @ git+https://gitlab.physmed.chudequebec.ca/gacou54/dicom-anonymiseur.git@ef79cdc8a2b0e456a361fd6002bdd07715e8ffb1
-dicompyler-core==0.5.5
-idna==2.10
-kiwisolver==1.3.1
-matplotlib==3.4.2
+grpm-uid @ git+https://gitlab.chudequebec.ca/gacou54/grpm_uid.git
+dicom_rt_context_extractor @ git+https://gitlab.chudequebec.ca/sam23/dicom_rt_context_extractor.git
+mcdose2dicom @ git+https://gitlab.chudequebec.ca/sam23/mcdose2dicom.git
 numpy==1.20.3
-Pillow==8.2.0
-pydicom==2.1.2
-pyorthanc==0.2.14
-pyparsing==2.4.7
-python-dateutil==2.8.1
-requests==2.25.1
-six==1.16.0
-urllib3==1.26.5
-xlrd==2.0.1
+prostate-calcification-segmentation @ git+https://gitlab.chudequebec.ca/sam23/prostatecalcificationsegmentation.git
+topas-file-generator @ git+https://gitlab.chudequebec.ca/sam23/topasfilegenerator.git
+egs-brachy-file-generator @ git+https://gitlab.chudequebec.ca/sam23/egs_brachy_file_generator.git
+py3ddos @ git+https://github.com/smichi23/py3ddose.git
+topas2numpy~=0.2.0
+pydicom~=2.1.2
