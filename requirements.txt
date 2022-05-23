@@ -1,6 +1,7 @@
 grpm-uid @ git+https://gitlab.chudequebec.ca/gacou54/grpm_uid.git
 dicom_rt_context_extractor @ git+https://gitlab.chudequebec.ca/sam23/dicom_rt_context_extractor.git
 mcdose2dicom @ git+https://gitlab.chudequebec.ca/sam23/mcdose2dicom.git
+dicom-sr-builder @ git+https://gitlab.chudequebec.ca/sam23/dicom-sr-builder.git
 numpy==1.20.3
 prostate-calcification-segmentation @ git+https://gitlab.chudequebec.ca/sam23/prostatecalcificationsegmentation.git
 topas-file-generator @ git+https://gitlab.chudequebec.ca/sam23/topasfilegenerator.git

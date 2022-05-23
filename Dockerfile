@@ -16,6 +16,8 @@ SHELL ["/bin/bash", "-c"]
 
 RUN chmod ugo+x -R /workflow
 
+RUN apt-get update -y
+
 RUN apt install -y git &&\
     git config --global url."https://${GIT_USER}:${GIT_PASS}@gitlab.chudequebec.ca".insteadOf "https://gitlab.chudequebec.ca"&&\
     apt install -y python3.8-venv &&\

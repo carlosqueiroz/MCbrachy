@@ -6,8 +6,8 @@ from py3ddose.py3ddose import DoseFile
 from topas2numpy import BinnedResult
 
 
-class OutputCleaner:
-    def __init__(self, input_file_folder, **kwargs):
+class OutputCleaners:
+    def __init__(self, **kwargs):
         """
 
         :param input_file_folder:
@@ -18,20 +18,19 @@ class OutputCleaner:
                        to_dose_factor (float)
                        "series_description" (str)
         """
-        self.input_file_folder = input_file_folder
         for key in kwargs.keys():
             self.__setattr__(key, kwargs[key])
 
         self.a3ddose = self._3ddose_to_dicom
         self.binary = self._binary_to_dicom
 
-    def _3ddose_to_dicom(self, output_path, path_to_rt_plan):
+    def _3ddose_to_dicom(self, input_folder, output_path, path_to_rt_plan):
         output_3ddose_path = ""
         output_3ddose_file_name = ""
-        for file_name in os.listdir(self.input_file_folder):
+        for file_name in os.listdir(input_folder):
             if file_name.endswith(".3ddose"):
-                output_3ddose_path = os.path.join(self.input_file_folder, file_name)
-                output_3ddose_file_name = file_name.removesuffix(".3ddose")
+                output_3ddose_path = os.path.join(input_folder, file_name)
+                output_3ddose_file_name = file_name.replace(".3ddose", "")
 
         open_3ddose = DoseFile(output_3ddose_path, load_uncertainty=True)
         dose_data = np.flip(open_3ddose.dose, axis=0)
@@ -92,13 +91,13 @@ class OutputCleaner:
 
         return storing
 
-    def _binary_to_dicom(self, output_path, path_to_rt_plan):
+    def _binary_to_dicom(self, input_folder, output_path, path_to_rt_plan):
         output_bin_path = ""
         output_bin_file_name = ""
-        for file_name in os.listdir(self.input_file_folder):
+        for file_name in os.listdir(input_folder):
             if file_name.endswith(".bin"):
-                output_bin_path = os.path.join(self.input_file_folder, file_name)
-                output_bin_file_name = file_name.removesuffix(".bin")
+                output_bin_path = os.path.join(input_folder, file_name)
+                output_bin_file_name = file_name.replace(".bin", "")
 
         open_bin = BinnedResult(output_bin_path)
         dose_data = np.flip(open_bin.data["Sum"], axis=0)
@@ -111,7 +110,7 @@ class OutputCleaner:
         if hasattr(self, "dose_comment"):
             dose_comment = self.__getattribute__("dose_comment")
         to_dose_factor = 1.0
-        if hasattr(self, "dose_comment"):
+        if hasattr(self, "to_dose_factor"):
             to_dose_factor = self.__getattribute__("to_dose_factor")
         software = ""
         if hasattr(self, "software"):
@@ -167,7 +166,7 @@ class OutputCleaner:
         std.rt_dose.SeriesNumber = dose.rt_dose.SeriesNumber
         std.rt_dose.InstanceNumber = dose.rt_dose.InstanceNumber + 1
 
-        dose_saving_path = os.path.join(output_path, "dose" + file_naming + ".dcm")
+        dose_saving_path = os.path.join(output_path, "dose_" + file_naming + ".dcm")
         dose.save_rt_dose_to(dose_saving_path)
         adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(dose_saving_path,
                                                                            path_to_rt_plan)
@@ -177,18 +176,18 @@ class OutputCleaner:
             if self.__getattribute__("generate_dvh"):
                 pass
 
-        error_saving_path = os.path.join(output_path, "error" + file_naming + ".dcm")
+        error_saving_path = os.path.join(output_path, "error_" + file_naming + ".dcm")
         std.save_rt_dose_to(error_saving_path)
         adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(error_saving_path,
                                                                            path_to_rt_plan)
 
-        path_updated_plan = os.path.join(output_path, "updated_plan" + file_naming + ".dcm")
+        path_updated_plan = os.path.join(output_path, "updated_plan_" + file_naming + ".dcm")
         adapt_rt_dose_to_existing_dicoms.add_reference_in_rt_plan(path_to_rt_plan, dose_saving_path,
                                                                   path_updated_plan)
         adapt_rt_dose_to_existing_dicoms.add_reference_in_rt_plan(path_updated_plan, error_saving_path)
 
         return output_path
 
-    def clean_output(self, initial_file_type: str, output_path, path_to_rt_plan):
-        assert initial_file_type in ["a3ddose", "binaru"]
-        self.__getattribute__(initial_file_type)(output_path, path_to_rt_plan)
+    def clean_output(self, initial_file_type: str, input_folder, output_path, path_to_rt_plan):
+        assert initial_file_type in ["a3ddose", "binary"]
+        return self.__getattribute__(initial_file_type)(input_folder, output_path, path_to_rt_plan)
