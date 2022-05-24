@@ -5,6 +5,8 @@ import sys
 from datetime import date, time
 
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
+from dicom_sr_builder.content_sequence_generator import TEXT_generator, CodeSequence_generator
+
 from root import ROOT
 from simulation_runners import SimulationRunners
 from output_cleaners import OutputCleaners
@@ -120,14 +122,12 @@ if __name__ == "__main__":
     simulation_runner = SimulationRunners(nb_treads=1, waiting_time=5,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
     output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.2",
-                                    image_position=r'0\0\0',
-                                    image_orientation_patient=r'1\0\0\0\1\0',
-                                    to_dose_factor=1.0,
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=16,
                                     series_description="EGS_BRACHY_TG186_DOSE",
-                                    generate_dvh=False)
+                                    generate_dvh=False,
+                                    generate_sr=generate_sr)
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
@@ -149,37 +149,19 @@ if __name__ == "__main__":
 
             output_folder = simulation_runner.launch_simulation(runner_selected, sim_files_folder,
                                                                 simulation_files_path)
-            try:
-                final_output_path = output_cleaner.clean_output(output_file_format, output_folder, final_output_folder,
-                                                                plan.plan_path)
-            except:
-                pass
+
             if generate_sr:
-                content_sequence_items = []
-                for content_sequence in all_sr_sequence:
-                    content_sequence_items.append(content_sequence.BuildDictionary())
-
                 with open(log_file, 'r') as file:
-                    logs_as_text = file.read().replace('\n', ' ')
+                    logs_as_text = file.read()
 
-                content_sequence_items.append({"ValueType": "TEXT",
-                                               "RelationshipType": "HAS ACQ CONTEXT",
-                                               "ConceptNameCodeSequence": {"CodeValue": "1000",
-                                                                           "CodingSchemeDesignator": "CUSTOM",
-                                                                           "CodeMeaning": "Logs"},
-                                               "Value": logs_as_text})
-                whole_content_sequence = {"ValueType": "CONTAINER",
-                                          "ConceptNameCodeSequence": {"CodeValue": "100",
-                                                                      "CodingSchemeDesignator": "CUSTOM",
-                                                                      "CodeMeaning": "MC simulation parameters"},
-                                          "ContinuityOfContent": "SEPERATE",
-                                          "Value": content_sequence_items}
+                all_sr_sequence.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
+                                                      CodeSequence_generator("1000", "CUSTOM", "Logs")))
 
-                sr_builder = SRBuilder()
-                sr_builder.add_content_sequence(whole_content_sequence)
-                sr_builder.build()
-                sr_path = os.path.join(final_output_folder, f"SR_{plan.patient}_{plan.study}.dcm")
-                sr_builder.save_sr_to(sr_path)
+            new_to_dose_factor = (plan.list_of_sources[0].air_kerma_rate *
+                                  plan.list_of_sources[0].half_life * 24) / meta_data_dict["air_kerma_strength"]
+            final_output_path = output_cleaner.clean_output(output_file_format, output_folder, final_output_folder,
+                                                            study_path, image_position=None, image_orientation_patient=None,
+                                                            to_dose_factor=1.0, sr_item_list=all_sr_sequence)
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
