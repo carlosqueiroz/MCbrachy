@@ -153,12 +153,22 @@ if __name__ == "__main__":
                 all_sr_sequence.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
                                                       CodeSequence_generator("1000", "CUSTOM", "Logs")))
 
-            new_to_dose_factor = (plan.list_of_sources[0].air_kerma_rate *
-                                  plan.list_of_sources[0].half_life * 24) / meta_data_dict["air_kerma_strength"]
+            image_position = plan.structures.x_y_z_origin
+            if "image_position_offset" in meta_data_dict.keys():
+                image_position += meta_data_dict["image_position_offset"]
+
+            image_orientation_patient = plan.structures.x_y_z_rotation_vectors
+            if "image_orientation_patient_offset" in meta_data_dict.keys():
+                image_orientation_patient += meta_data_dict["image_orientation_patient_offset"]
+
+            to_dose_factor = plan.dose_factor
+            if "dose_factor_offset" in meta_data_dict.keys():
+                to_dose_factor = to_dose_factor * meta_data_dict["dose_factor_offset"]
+
             final_output_path = output_cleaner.clean_output(output_file_format, output_folder, final_output_folder,
-                                                            study_path, image_position=None,
-                                                            image_orientation_patient=None,
-                                                            to_dose_factor=1.0, sr_item_list=all_sr_sequence)
+                                                            study_path, image_position=image_position,
+                                                            image_orientation_patient=image_orientation_patient,
+                                                            to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence)
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
