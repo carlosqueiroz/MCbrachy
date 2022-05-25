@@ -22,7 +22,6 @@ class DicomExtractors:
 
     def _extract_permanent_implant_brachy_context(self, input_folder: str, output_folder: str) -> str:
         rt_plan_path = find_modality_in_folder("RTPLAN", input_folder)
-        print(rt_plan_path)
         plan = extract_all_sources_informations(rt_plan_path)
         plan.extract_structures(input_folder)
         plan.extract_dosimetry(input_folder)

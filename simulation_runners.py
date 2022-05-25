@@ -18,11 +18,6 @@ class SimulationRunners:
         self.topas = self._launch_topas
         self.egs_brachy = self._launch_egs_brachy
 
-    def _log_subprocess_output(self, std_out):
-        with open(std_out, 'rb') as log_file:
-            for line in log_file.readlines():
-                logging.info('got line from subprocess: %r', line)
-
     def _launch_topas(self, input_folder: str, output_folder: str) -> str:
         input_file_path = ""
         for file_name in os.listdir(input_folder):
@@ -32,6 +27,10 @@ class SimulationRunners:
             simulation = subprocess.run(bash_command.split())
 
             return output_folder
+
+    def _log_subprocess_output(self, pipe):
+        for line in pipe.decode("utf-8").split("\n"):
+            logging.info('got line from subprocess: %r', line)
 
     def _launch_egs_brachy(self, input_folder: str, output_folder: str) -> str:
         nb_treads = self.__getattribute__("nb_treads")
@@ -47,11 +46,10 @@ class SimulationRunners:
         splited_bash = bash_command.split()
         file_name_no_ext = input_name.replace(".egsinp", "")
         splited_bash.append(fr"egs_brachy -i {file_name_no_ext}")
-        simulation = subprocess.run(splited_bash)
+        simulation = subprocess.run(splited_bash, capture_output=True)
+        self._log_subprocess_output(simulation.stdout)
         copy(os.path.join(self.__getattribute__("egs_brachy_home"), f"{file_name_no_ext}.phantom.3ddose"),
              os.path.join(output_folder, f"{file_name_no_ext}.phantom.3ddose"))
-
-        # self._log_subprocess_output(simulation.stdout)
 
         return output_folder
 

@@ -1,12 +1,12 @@
 import getopt
-import logging
+import logging.config
 import os
 import sys
-from datetime import date, time
+from datetime import date, time, datetime
 
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
 from dicom_sr_builder.content_sequence_generator import TEXT_generator, CodeSequence_generator
-
+import yaml
 from root import ROOT
 from simulation_runners import SimulationRunners
 from output_cleaners import OutputCleaners
@@ -91,13 +91,6 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
                                  "calcification": "CALCIFICATION_ICRU46"}
 
 if __name__ == "__main__":
-    def logs_file_setup(file_path, level=logging.INFO):
-        logs_file = file_path
-        logging.basicConfig(filename=logs_file, filemode='w+', level=level)
-        handler = logging.StreamHandler(sys.stdout)
-        logging.getLogger().addHandler(handler)
-
-
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate"], False, 1e3)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
@@ -108,7 +101,7 @@ if __name__ == "__main__":
     output_file_format = "a3ddose"
     generate_sr = True
 
-    dicom_extractor = DicomExtractors(segmentation=["prostate_calcification"])
+    dicom_extractor = DicomExtractors(segmentation=[])
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
                                                list_of_desired_structures=ORGANS_TO_USE,
                                                material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
@@ -140,8 +133,10 @@ if __name__ == "__main__":
             os.mkdir(simulation_files_path)
             final_output_folder = os.path.join(OUTPUT_PATH, f"final_output_{patient}_{studies}")
             os.mkdir(final_output_folder)
-            log_file = os.path.join(ROOT, f"simulation_files", f"simulation_files_{patient}_{studies}", "logs.logs")
-            logs_file_setup(log_file)
+            log_file = os.path.join(simulation_files_path, "logs.logs")
+            logging.basicConfig(filename=log_file, level=logging.INFO,
+                                format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+                                datefmt='%H:%M:%S')
             plan = dicom_extractor.extract_context_from_dicoms(extractor_selected, study_path, final_output_folder)
             sim_files_folder, meta_data_dict, all_sr_sequence = input_file_generator.generate_input_files(
                 input_file_generator_selected,
@@ -153,6 +148,7 @@ if __name__ == "__main__":
             if generate_sr:
                 with open(log_file, 'r') as file:
                     logs_as_text = file.read()
+                    print(logs_as_text)
 
                 all_sr_sequence.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
                                                       CodeSequence_generator("1000", "CUSTOM", "Logs")))
@@ -160,7 +156,8 @@ if __name__ == "__main__":
             new_to_dose_factor = (plan.list_of_sources[0].air_kerma_rate *
                                   plan.list_of_sources[0].half_life * 24) / meta_data_dict["air_kerma_strength"]
             final_output_path = output_cleaner.clean_output(output_file_format, output_folder, final_output_folder,
-                                                            study_path, image_position=None, image_orientation_patient=None,
+                                                            study_path, image_position=None,
+                                                            image_orientation_patient=None,
                                                             to_dose_factor=1.0, sr_item_list=all_sr_sequence)
 
         if RESTRUCTURING_FOLDERS:
