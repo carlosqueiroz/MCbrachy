@@ -1,11 +1,13 @@
-
+import logging
 import os
 from datetime import datetime
-
+import pydicom
 import numpy as np
 from dicom_rt_context_extractor.utils.search_instance_and_convert_coord_in_pixel import find_modality_in_folder
+from dicom_sr_builder.content_sequence_generator import TEXT_generator, CodeSequence_generator
 from dicom_sr_builder.sr_builder import SRBuilder
-from mcdose2dicom import create_rt_dose_from_scratch, adapt_rt_dose_to_existing_dicoms, adding_dvh
+from mcdose2dicom import create_rt_dose_from_scratch, adapt_rt_dose_to_existing_dicoms
+from mcdose2dicom.adding_dvh import generate_and_add_all_dvh_to_dicom
 from mcdose2dicom.create_rt_dose_from_scratch import RTDoseBuilder
 from py3ddose.py3ddose import DoseFile
 from topas2numpy import BinnedResult
@@ -49,7 +51,7 @@ class OutputCleaners:
 
     def _3ddose_to_dicom(self, input_folder, output_path,
                          dicom_folder, image_position=None, image_orientation_patient=None,
-                         to_dose_factor=1.0, sr_item_list=None):
+                         to_dose_factor=1.0, sr_item_list=None, log_file=None):
         if image_position is None:
             image_position = [0, 0, 0]
         if image_orientation_patient is None:
@@ -62,6 +64,7 @@ class OutputCleaners:
                 output_3ddose_path = os.path.join(input_folder, file_name)
                 output_3ddose_file_name = file_name.replace(".3ddose", "")
 
+        completed = False
         try:
             open_3ddose = DoseFile(output_3ddose_path, load_uncertainty=True)
             dose_data = np.flip(open_3ddose.dose, axis=0)
@@ -114,23 +117,34 @@ class OutputCleaners:
             rt_dose_error.build()
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
-                                           output_3ddose_file_name)
-            if hasattr(self, "generate_sr"):
-                if self.generate_sr:
-                    self._generate_sr(output_path, sr_item_list, os.path.join(output_path,
-                                                                              "dose_" + output_3ddose_file_name + ".dcm"),
-                                      {"CodeValue": "6000", "CodingSchemeDesignator": "CUSTOM",
-                                       "CodeMeaning": "Method of acquisition"}, output_3ddose_file_name)
+                                           output_3ddose_file_name, to_dose_factor)
+            complete = True
+        except Exception as e:
+            logging.error(e)
 
-        except:
+        finally:
+            if completed:
+                purpose = {"CodeValue": "6000", "CodingSchemeDesignator": "CUSTOM",
+                           "CodeMeaning": "Method of acquisition"}
+                file_name = output_3ddose_file_name
+            else:
+                now = datetime.now()
+                purpose = {"CodeValue": "5000",
+                           "CodingSchemeDesignator": "CUSTOM",
+                           "CodeMeaning": "Attempted MC simulation"}
+                file_name = f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}"
+
             if hasattr(self, "generate_sr"):
                 if self.generate_sr:
+                    with open(log_file, 'r') as file:
+                        logs_as_text = file.read()
+                        print(logs_as_text)
+                    sr_item_list.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
+                                                       CodeSequence_generator("1000", "CUSTOM", "Logs")))
                     rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
-                    now = datetime.now()
-                    self._generate_sr(output_path, sr_item_list, rt_plan_path, {"CodeValue": "5000",
-                                                                                "CodingSchemeDesignator": "CUSTOM",
-                                                                                "CodeMeaning": "Attempted MC simulation"},
-                                      f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}")
+
+                    self._generate_sr(output_path, sr_item_list, rt_plan_path, purpose,
+                                      file_name)
             storing = output_path
 
         return storing
@@ -196,15 +210,21 @@ class OutputCleaners:
             rt_dose_error.build()
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
-                                           output_bin_file_name)
+                                           output_bin_file_name, to_dose_factor)
             if hasattr(self, "generate_sr"):
                 if self.generate_sr:
-                    self._generate_sr(sr_item_list, os.path.join(output_path,
-                                                                 "dose_" + output_bin_file_name + ".dcm"),
-                                      {"CodeValue": "6000", "CodingSchemeDesignator": "CUSTOM",
-                                       "CodeMeaning": "Method of acquisition"}, output_bin_file_name)
+                    if hasattr(self, "generate_sr"):
+                        if self.generate_sr:
+                            rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
+                            now = datetime.now()
+                            self._generate_sr(output_path, sr_item_list, rt_plan_path, {"CodeValue": "5000",
+                                                                                        "CodingSchemeDesignator": "CUSTOM",
+                                                                                        "CodeMeaning": "Attempted MC "
+                                                                                                       "simulation"},
+                                              f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}")
+                    storing = output_path
 
-        except:
+        finally:
             if hasattr(self, "generate_sr"):
                 if self.generate_sr:
                     rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
@@ -215,9 +235,10 @@ class OutputCleaners:
                                       f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}")
             storing = output_path
 
-        return storing
+            return storing
 
-    def _store_in_dicom(self, output_path, dicom_folder, dose: RTDoseBuilder, std: RTDoseBuilder, file_naming):
+    def _store_in_dicom(self, output_path, dicom_folder, dose: RTDoseBuilder, std: RTDoseBuilder, file_naming,
+                        to_dose):
         path_to_rt_plan = find_modality_in_folder("RTPLAN", dicom_folder)
         if hasattr(self, "series_description"):
             dose.rt_dose.SeriesDescription = self.__getattribute__("series_description")
@@ -231,11 +252,6 @@ class OutputCleaners:
         adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(dose_saving_path,
                                                                            path_to_rt_plan)
 
-        # TODO generate dvh
-        if hasattr(self, "generate_dvh"):
-            if self.__getattribute__("generate_dvh"):
-                pass
-
         error_saving_path = os.path.join(output_path, "error_" + file_naming + ".dcm")
         std.save_rt_dose_to(error_saving_path)
         adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(error_saving_path,
@@ -246,11 +262,15 @@ class OutputCleaners:
                                                                   path_updated_plan)
         adapt_rt_dose_to_existing_dicoms.add_reference_in_rt_plan(path_updated_plan, error_saving_path)
 
+        if hasattr(self, "generate_dvh"):
+            if self.__getattribute__("generate_dvh"):
+                self._generate_dvh(dose_saving_path, dicom_folder, to_dose)
+
         return output_path
 
     def clean_output(self, initial_file_type: str, input_folder, output_path,
                      dicom_folder, image_position=None, image_orientation_patient=None,
-                     to_dose_factor=1.0, sr_item_list=None):
+                     to_dose_factor=1.0, sr_item_list=None, log_file=None):
         assert initial_file_type in ["a3ddose", "binary"]
         if image_position is None:
             image_position = [0, 0, 0]
@@ -258,4 +278,54 @@ class OutputCleaners:
             image_orientation_patient = [1, 0, 0, 0, 1, 0]
 
         return self.__getattribute__(initial_file_type)(input_folder, output_path, dicom_folder, image_position,
-                                                        image_orientation_patient, to_dose_factor, sr_item_list)
+                                                        image_orientation_patient, to_dose_factor, sr_item_list,
+                                                        log_file)
+
+    def _generate_dvh(self, dose_saving_path, dicom_folder, to_dose_factor):
+        if hasattr(self, "use_updated_rt_struct"):
+            if self.__getattribute__("use_updated_rt_struct"):
+                dicom_folder = os.path.dirname(dose_saving_path)
+        rt_struct_path = find_modality_in_folder("RTSTRUCT", dicom_folder)
+        dvh_comment = "Generated from dycompyler-core "
+        if hasattr(self, "dvh_comment"):
+            dvh_comment += self.__getattribute__("dvh_comment")
+        prescription_dose = 0
+        if hasattr(self, "prescription_dose"):
+            prescription_dose = self.__getattribute__("prescription_dose")
+        dvh_normalization_point = [0, 0, 0]
+        if hasattr(self, "dvh_normalization_point"):
+            dvh_normalization_point = self.__getattribute__("dvh_normalization_point")
+        dvh_interpolation_segments = 1
+        if hasattr(self, "dvh_interpolation_segments"):
+            dvh_interpolation_segments = self.__getattribute__("dvh_interpolation_segments")
+        dvh_callback = None
+        if hasattr(self, "dvh_callback"):
+            dvh_callback = self.__getattribute__("dvh_callback")
+        dvh_calculate_full_volume = False
+        if hasattr(self, "dvh_calculate_full_volume"):
+            dvh_calculate_full_volume = self.__getattribute__("dvh_calculate_full_volume")
+        dvh_use_structure_extents = False
+        if hasattr(self, "dvh_use_structure_extents"):
+            dvh_use_structure_extents = self.__getattribute__("dvh_use_structure_extents")
+        dvh_dose_limit = None
+        if hasattr(self, "dvh_dose_limit"):
+            dvh_use_structure_extents = self.__getattribute__("dvh_dose_limit")
+
+        open_rt_dose = pydicom.dcmread(dose_saving_path)
+
+        pixel_spacing = open_rt_dose.PixelSpacing
+        generate_and_add_all_dvh_to_dicom(dose_saving_path, rt_struct_path, dvh_comment=dvh_comment,
+                                          dose_scaling_factor=to_dose_factor,
+                                          dose_type="PHYSICAL",
+                                          contribution_type="INCLUDE",
+                                          prescription_dose=prescription_dose,
+                                          dvh_normalization_point=dvh_normalization_point,
+                                          saving_path=None,
+                                          limit=dvh_dose_limit,
+                                          calculate_full_volume=dvh_calculate_full_volume,
+                                          use_structure_extents=dvh_use_structure_extents,
+                                          interpolation_resolution=(pixel_spacing[0] / dvh_interpolation_segments,
+                                                                    pixel_spacing[1] / dvh_interpolation_segments),
+                                          interpolation_segments_between_planes=dvh_interpolation_segments,
+                                          thickness=None,
+                                          callback=dvh_callback)

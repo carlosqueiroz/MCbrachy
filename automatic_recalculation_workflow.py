@@ -2,17 +2,14 @@ import getopt
 import logging.config
 import os
 import sys
-from datetime import date, time, datetime
-
+import numpy as np
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
 from dicom_sr_builder.content_sequence_generator import TEXT_generator, CodeSequence_generator
-import yaml
 from root import ROOT
 from simulation_runners import SimulationRunners
 from output_cleaners import OutputCleaners
 from input_file_generators import InputFileGenerators
 from extractors import DicomExtractors
-from dicom_sr_builder.sr_builder import SRBuilder
 
 
 def get_aguments(argv):
@@ -88,10 +85,11 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
                                  "rectum": "RECTUM_ICRP23",
                                  "uretre": "URETHRA_WW86",
                                  "Bladder Neck": "URINARY_BLADDER_EMPTY",
-                                 "calcification": "CALCIFICATION_ICRU46"}
+                                 "prostate_calcification": "CALCIFICATION_ICRU46"}
 
 if __name__ == "__main__":
-    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate"], False, 1e3)
+    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
+                                                                  "rectum", "prostate_calcification"], False, 1e3)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
 
@@ -101,7 +99,7 @@ if __name__ == "__main__":
     output_file_format = "a3ddose"
     generate_sr = True
 
-    dicom_extractor = DicomExtractors(segmentation=[])
+    dicom_extractor = DicomExtractors(segmentation=["prostate_calcification"])
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
                                                list_of_desired_structures=ORGANS_TO_USE,
                                                material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
@@ -119,8 +117,16 @@ if __name__ == "__main__":
                                     patient_orientation="",
                                     bits_allocated=16,
                                     series_description="EGS_BRACHY_TG186_DOSE",
-                                    generate_dvh=False,
-                                    generate_sr=generate_sr)
+                                    generate_dvh=True,
+                                    generate_sr=generate_sr,
+                                    dvh_calculate_full_volume=False,
+                                    dvh_use_structure_extents=False,
+                                    dvh_comment="",
+                                    dvh_normalization_point=[0, 0, 0],
+                                    dvh_interpolation_segments=2,
+                                    dvh_dose_limit=60000,
+                                    prescription_dose=144,
+                                    use_updated_rt_struct=True)
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
@@ -145,21 +151,13 @@ if __name__ == "__main__":
             output_folder = simulation_runner.launch_simulation(runner_selected, sim_files_folder,
                                                                 simulation_files_path)
 
-            if generate_sr:
-                with open(log_file, 'r') as file:
-                    logs_as_text = file.read()
-                    print(logs_as_text)
-
-                all_sr_sequence.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
-                                                      CodeSequence_generator("1000", "CUSTOM", "Logs")))
-
-            image_position = plan.structures.x_y_z_origin
+            image_position = np.asarray(plan.structures.x_y_z_origin)
             if "image_position_offset" in meta_data_dict.keys():
-                image_position += meta_data_dict["image_position_offset"]
+                image_position += np.asarray(meta_data_dict["image_position_offset"])
 
-            image_orientation_patient = plan.structures.x_y_z_rotation_vectors
+            image_orientation_patient = np.asarray(plan.structures.x_y_z_rotation_vectors)
             if "image_orientation_patient_offset" in meta_data_dict.keys():
-                image_orientation_patient += meta_data_dict["image_orientation_patient_offset"]
+                image_orientation_patient += np.asarray(meta_data_dict["image_orientation_patient_offset"])
 
             to_dose_factor = plan.dose_factor
             if "dose_factor_offset" in meta_data_dict.keys():
@@ -168,7 +166,7 @@ if __name__ == "__main__":
             final_output_path = output_cleaner.clean_output(output_file_format, output_folder, final_output_folder,
                                                             study_path, image_position=image_position,
                                                             image_orientation_patient=image_orientation_patient,
-                                                            to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence)
-
+                                                            to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
+                                                            log_file=log_file)
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
