@@ -4,7 +4,6 @@ import os
 import sys
 import numpy as np
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
-from dicom_sr_builder.content_sequence_generator import TEXT_generator, CodeSequence_generator
 from root import ROOT
 from simulation_runners import SimulationRunners
 from output_cleaners import OutputCleaners
@@ -117,7 +116,7 @@ if __name__ == "__main__":
                                     patient_orientation="",
                                     bits_allocated=16,
                                     series_description="EGS_BRACHY_TG186_DOSE",
-                                    generate_dvh=True,
+                                    generate_dvh=False,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
                                     dvh_use_structure_extents=False,
@@ -127,6 +126,9 @@ if __name__ == "__main__":
                                     dvh_dose_limit=60000,
                                     prescription_dose=144,
                                     use_updated_rt_struct=True)
+
+
+
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)

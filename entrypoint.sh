@@ -1,4 +1,8 @@
 #! /bin/bash
+export EGS_HOME="/EGSnrc_CLRP/egs_home/"
+export EGS_CONFIG="/EGSnrc_CLRP/HEN_HOUSE/specs/linux.conf"
+export HEN_HOUSE="/EGSnrc_CLRP/HEN_HOUSE/"
+export EGS_BATCH_SYSTEM=at
 . /EGSnrc_CLRP/HEN_HOUSE/scripts/egsnrc_bashrc_additions
 . /EGSnrc_CLRP/HEN_HOUSE/scripts/clrp_bashrc_additions
 alias egs_parallel="/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel"

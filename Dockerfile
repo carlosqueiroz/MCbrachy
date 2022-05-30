@@ -22,7 +22,9 @@ RUN apt install -y git &&\
     git config --global url."https://${GIT_USER}:${GIT_PASS}@gitlab.chudequebec.ca".insteadOf "https://gitlab.chudequebec.ca"&&\
     apt install -y python3.8-venv &&\
     python3 -m venv venv &&\
-    ./venv/bin/pip install -U -r ./requirements.txt
+    source ./venv/bin/activate &&\
+    pip install --upgrade pip &&\
+    pip install -U -r ./requirements.txt
 
 RUN chmod +x ./entrypoint.sh &&\
     sed -i -e 's/\r$//' ./entrypoint.sh

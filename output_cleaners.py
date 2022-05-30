@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from datetime import datetime
 import pydicom
 import numpy as np
@@ -311,10 +312,10 @@ class OutputCleaners:
         if hasattr(self, "dvh_dose_limit"):
             dvh_use_structure_extents = self.__getattribute__("dvh_dose_limit")
 
-        open_rt_dose = pydicom.dcmread(dose_saving_path)
-
+        open_rt_dose = pydicom.dcmread(find_modality_in_folder("RTDOSE", dicom_folder))
         pixel_spacing = open_rt_dose.PixelSpacing
-        generate_and_add_all_dvh_to_dicom(dose_saving_path, rt_struct_path, dvh_comment=dvh_comment,
+        generate_and_add_all_dvh_to_dicom(find_modality_in_folder("RTDOSE", dicom_folder),
+                                          rt_struct_path, dvh_comment=dvh_comment,
                                           dose_scaling_factor=to_dose_factor,
                                           dose_type="PHYSICAL",
                                           contribution_type="INCLUDE",
