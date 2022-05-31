@@ -91,9 +91,8 @@ if __name__ == "__main__":
                                                                   "rectum", "prostate_calcification"], False, 1e3)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
-
     extractor_selected = "permanent_implant_brachy"
-    input_file_generator_selected = "egs_brachy_permanent_implant_brachy"
+    input_file_generator_selected = "egs_brachy_permanent_tg43_implant_brachy"
     runner_selected = "egs_brachy"
     output_file_format = "a3ddose"
     generate_sr = True
@@ -108,6 +107,7 @@ if __name__ == "__main__":
                                                add="",
                                                generate_sr=generate_sr,
                                                crop=True,
+                                               expand_tg45_phantom=40,
                                                code_version="")
     simulation_runner = SimulationRunners(nb_treads=1, waiting_time=5,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
@@ -115,7 +115,7 @@ if __name__ == "__main__":
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=16,
-                                    series_description="EGS_BRACHY_TG186_DOSE",
+                                    series_description="EGS_BRACHY_TG186_DOSE_COMP",
                                     generate_dvh=False,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
@@ -126,9 +126,6 @@ if __name__ == "__main__":
                                     dvh_dose_limit=60000,
                                     prescription_dose=144,
                                     use_updated_rt_struct=True)
-
-
-
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
