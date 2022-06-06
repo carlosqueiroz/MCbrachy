@@ -4,6 +4,9 @@ from typing import Tuple
 from egs_brachy_file_generator.generate_permanent_implant_brachy_input import generate_whole_egs_brachy_input_file
 from egs_brachy_file_generator.generate_permanent_implant_tg43_brachy_input import \
     generate_whole_egs_brachy_tg43_input_file
+from topas_file_generator.generate_topas_input_from_dicom_extractor import generate_whole_topas_input_file
+
+from root import ROOT
 
 
 class InputFileGenerators:
@@ -25,7 +28,43 @@ class InputFileGenerators:
         self.egs_brachy_ldr_brachy = self._genrerate_egs_brachy_ldr_brachy_input_files
 
     def _genrerate_topas_permanent_implant_brachy_input_files(self, plan, output_folder: str):
-        pass
+        total_particles = self.__getattribute__("total_particles")
+        frequence_of_print = f"i:Ts/ShowHistoryCountAtInterval = {total_particles // 100}"
+        list_of_desired_structures = self.__getattribute__("list_of_desired_structures")
+        material_attribution_dict = self.__getattribute__("material_attribution_dict")
+        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.txt")
+        path_to_save_3d_index = os.path.join(output_folder, f"index_3d_{plan.patient}_{plan.study}.bin")
+        muen_path = os.path.join(ROOT, "simulation_files", "Muen.dat")
+        output_path = os.path.join(output_folder, f"dose_{plan.patient}_{plan.study}.bin")
+        if hasattr(self, "add"):
+            add = self.__getattribute__("add")
+        else:
+            add = ""
+        if hasattr(self, "generate_sr"):
+            generate_sr = self.__getattribute__("generate_sr")
+        else:
+            generate_sr = False
+        if hasattr(self, "crop"):
+            crop = self.__getattribute__("crop")
+        else:
+            crop = False
+        if hasattr(self, "code_version"):
+            code_version = self.__getattribute__("code_version")
+        else:
+            code_version = ""
+        if hasattr(self, "topas_output_type"):
+            topas_output_type = self.__getattribute__("topas_output_type")
+        else:
+            topas_output_type = "binary"
+        meta_data_dict, all_sr_sequence = generate_whole_topas_input_file(plan, total_particles,
+                                                                          list_of_desired_structures,
+                                                                          material_attribution_dict,
+                                                                          output_path,
+                                                                          path_to_save_input_file,
+                                                                          path_to_save_3d_index, topas_output_type
+                                                                          , add=frequence_of_print + add)
+
+        return output_folder, meta_data_dict, all_sr_sequence
 
     def _genrerate_egs_brachy_permanent_implant_brachy_input_files(self, plan, output_folder: str) -> Tuple:
         total_particles = self.__getattribute__("total_particles")

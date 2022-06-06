@@ -152,13 +152,15 @@ class OutputCleaners:
 
     def _binary_to_dicom(self, input_folder, output_path,
                          dicom_folder, image_position=None, image_orientation_patient=None,
-                         to_dose_factor=1.0, sr_item_list=None):
+                         to_dose_factor=1.0, sr_item_list=None, log_file=None):
         output_bin_path = ""
         output_bin_file_name = ""
         for file_name in os.listdir(input_folder):
             if file_name.endswith(".bin"):
                 output_bin_path = os.path.join(input_folder, file_name)
                 output_bin_file_name = file_name.replace(".bin", "")
+
+        completed = False
         try:
             open_bin = BinnedResult(output_bin_path)
             dose_data = np.flip(open_bin.data["Sum"], axis=0)
@@ -185,8 +187,8 @@ class OutputCleaners:
 
             image_position = fr"{image_position[0]}\{image_position[1]}\{image_position[2]}"
             image_orientation_patient = fr"{image_orientation_patient[0]}\{image_orientation_patient[1]}\
-                                                   {image_orientation_patient[2]}\{image_orientation_patient[3]}\
-                                                   {image_orientation_patient[4]}\{image_orientation_patient[5]}"
+                                       {image_orientation_patient[2]}\{image_orientation_patient[3]}\
+                                       {image_orientation_patient[4]}\{image_orientation_patient[5]}"
             dose_comment += f" Factor from dose/histories to total dose = {to_dose_factor}"
             rt_dose = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
                                                                 dose_type="PHYSICAL", dose_comment=dose_comment,
@@ -212,31 +214,36 @@ class OutputCleaners:
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
                                            output_bin_file_name, to_dose_factor)
-            if hasattr(self, "generate_sr"):
-                if self.generate_sr:
-                    if hasattr(self, "generate_sr"):
-                        if self.generate_sr:
-                            rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
-                            now = datetime.now()
-                            self._generate_sr(output_path, sr_item_list, rt_plan_path, {"CodeValue": "5000",
-                                                                                        "CodingSchemeDesignator": "CUSTOM",
-                                                                                        "CodeMeaning": "Attempted MC "
-                                                                                                       "simulation"},
-                                              f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}")
-                    storing = output_path
+            complete = True
+        except Exception as e:
+            logging.error(e)
 
         finally:
+            if completed:
+                purpose = {"CodeValue": "6000", "CodingSchemeDesignator": "CUSTOM",
+                           "CodeMeaning": "Method of acquisition"}
+                file_name = output_bin_file_name
+            else:
+                now = datetime.now()
+                purpose = {"CodeValue": "5000",
+                           "CodingSchemeDesignator": "CUSTOM",
+                           "CodeMeaning": "Attempted MC simulation"}
+                file_name = f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}"
+
             if hasattr(self, "generate_sr"):
                 if self.generate_sr:
+                    with open(log_file, 'r') as file:
+                        logs_as_text = file.read()
+                        print(logs_as_text)
+                    sr_item_list.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
+                                                       CodeSequence_generator("1000", "CUSTOM", "Logs")))
                     rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
-                    now = datetime.now()
-                    self._generate_sr(output_path, sr_item_list, rt_plan_path, {"CodeValue": "5000",
-                                                                                "CodingSchemeDesignator": "CUSTOM",
-                                                                                "CodeMeaning": "Attempted MC simulation"},
-                                      f"{now.strftime('%Y%m%d')}_{now.strftime('%H%M%S')}")
+
+                    self._generate_sr(output_path, sr_item_list, rt_plan_path, purpose,
+                                      file_name)
             storing = output_path
 
-            return storing
+        return storing
 
     def _store_in_dicom(self, output_path, dicom_folder, dose: RTDoseBuilder, std: RTDoseBuilder, file_naming,
                         to_dose):

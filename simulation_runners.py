@@ -23,10 +23,15 @@ class SimulationRunners:
         for file_name in os.listdir(input_folder):
             if file_name.startswith("input"):
                 input_file_path = os.path.join(input_folder, file_name)
-            bash_command = f"topas {input_file_path}"
-            simulation = subprocess.run(bash_command.split())
 
-            return output_folder
+        if hasattr(self, "nb_treads"):
+            with open(input_file_path, 'a') as file:
+                file.write(fr"i:Ts/NumberOfThreads = {self.__getattribute__('nb_treads')} ")
+        bash_command = f"topas {input_file_path}"
+        simulation = subprocess.run(bash_command.split(), capture_output=True)
+        self._log_subprocess_output(simulation.stdout)
+
+        return output_folder
 
     def _log_subprocess_output(self, pipe):
         for line in pipe.decode("utf-8").split("\n"):
