@@ -81,23 +81,22 @@ TOPAS_MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
 
 EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
                                  "vessie": "URINARY_BLADDER_EMPTY",
-                                 "rectum": "RECTUM_ICRP23",
+                                 "rectum": "AIR_TG43",
                                  "uretre": "URETHRA_WW86",
                                  "Bladder Neck": "URINARY_BLADDER_EMPTY",
                                  "prostate_calcification": "CALCIFICATION_ICRU46"}
 
 if __name__ == "__main__":
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
-                                                                  "rectum", "prostate_calcification"], False, 1e3)
+                                                                  "rectum"], False, 1e9)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
-    input_file_generator_selected = "egs_brachy_permanent_tg43_implant_brachy"
+    input_file_generator_selected = "egs_brachy_permanent_implant_brachy"
     runner_selected = "egs_brachy"
     output_file_format = "a3ddose"
     generate_sr = True
-
-    dicom_extractor = DicomExtractors(segmentation=["prostate_calcification"])
+    dicom_extractor = DicomExtractors(segmentation=[])
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
                                                list_of_desired_structures=ORGANS_TO_USE,
                                                material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
@@ -109,14 +108,15 @@ if __name__ == "__main__":
                                                crop=True,
                                                expand_tg45_phantom=40,
                                                code_version="")
-    simulation_runner = SimulationRunners(nb_treads=1, waiting_time=5,
+    simulation_runner = SimulationRunners(nb_treads=4, waiting_time=5,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
+
     output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.2",
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
-                                    bits_allocated=16,
+                                    bits_allocated=64,
                                     series_description="EGS_BRACHY_TG186_DOSE_COMP",
-                                    generate_dvh=False,
+                                    generate_dvh=True,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
                                     dvh_use_structure_extents=False,
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
         for studies in os.listdir(patient_folder_path):
             study_path = os.path.join(patient_folder_path, studies)
-            simulation_files_path = os.path.join(ROOT, f"simulation_files", f"simulation_files_{patient}_{studies}")
+            simulation_files_path = os.path.join(OUTPUT_PATH, f"simulation_files_{patient}_{studies}")
             os.mkdir(simulation_files_path)
             final_output_folder = os.path.join(OUTPUT_PATH, f"final_output_{patient}_{studies}")
             os.mkdir(final_output_folder)
@@ -167,5 +167,6 @@ if __name__ == "__main__":
                                                             image_orientation_patient=image_orientation_patient,
                                                             to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
                                                             log_file=log_file)
+
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)

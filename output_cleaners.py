@@ -114,7 +114,7 @@ class OutputCleaners:
                                                                       image_orientation_patient=image_orientation_patient,
                                                                       image_position_patient=image_position,
                                                                       patient_orientation=patient_orientation)
-            rt_dose_error.add_dose_grid(std_data, voxel_size, True, True)
+            rt_dose_error.add_dose_grid(std_data * dose_data, voxel_size, True, True)
             rt_dose_error.build()
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
