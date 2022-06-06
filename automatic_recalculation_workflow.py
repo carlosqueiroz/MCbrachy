@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
         for studies in os.listdir(patient_folder_path):
             study_path = os.path.join(patient_folder_path, studies)
-            simulation_files_path = os.path.join(OUTPUT_PATH, f"simulation_files_{patient}_{studies}")
+            simulation_files_path = os.path.join(ROOT, f"simulation_files", f"simulation_files_{patient}_{studies}")
             os.mkdir(simulation_files_path)
             final_output_folder = os.path.join(OUTPUT_PATH, f"final_output_{patient}_{studies}")
             os.mkdir(final_output_folder)
