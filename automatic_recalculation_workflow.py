@@ -109,7 +109,7 @@ if __name__ == "__main__":
                                                expand_tg45_phantom=40,
                                                code_version="",
                                                topas_output_type="binary")
-    simulation_runner = SimulationRunners(nb_treads=4, waiting_time=5,
+    simulation_runner = SimulationRunners(nb_treads=15, waiting_time=25,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.2",
