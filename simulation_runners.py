@@ -26,10 +26,11 @@ class SimulationRunners:
 
         if hasattr(self, "nb_treads"):
             with open(input_file_path, 'a') as file:
-                file.write(fr"i:Ts/NumberOfThreads = {self.__getattribute__('nb_treads')} ")
+                file.write(f"\ni:Ts/NumberOfThreads = {self.__getattribute__('nb_treads')}")
         bash_command = f"topas {input_file_path}"
-        simulation = subprocess.run(bash_command.split(), capture_output=True)
+        simulation = subprocess.run(bash_command.split(), capture_output=True, shell=True, executable='/bin/bash')
         self._log_subprocess_output(simulation.stdout)
+        self._log_subprocess_output(simulation.stderr)
 
         return output_folder
 
@@ -53,6 +54,7 @@ class SimulationRunners:
         splited_bash.append(fr"egs_brachy -i {file_name_no_ext}")
         simulation = subprocess.run(splited_bash, capture_output=True)
         self._log_subprocess_output(simulation.stdout)
+        self._log_subprocess_output(simulation.stderr)
         copy(os.path.join(self.__getattribute__("egs_brachy_home"), f"{file_name_no_ext}.phantom.3ddose"),
              os.path.join(output_folder, f"{file_name_no_ext}.phantom.3ddose"))
 
