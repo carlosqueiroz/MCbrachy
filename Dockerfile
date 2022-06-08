@@ -29,5 +29,7 @@ RUN apt install -y git &&\
 RUN chmod +x ./entrypoint.sh &&\
     sed -i -e 's/\r$//' ./entrypoint.sh
 
+ENV topas="/topas/topas/bin/topas"
+
 ENTRYPOINT ["./entrypoint.sh"]
 

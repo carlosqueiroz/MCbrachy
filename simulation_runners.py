@@ -27,11 +27,9 @@ class SimulationRunners:
         if hasattr(self, "nb_treads"):
             with open(input_file_path, 'a') as file:
                 file.write(f"\ni:Ts/NumberOfThreads = {self.__getattribute__('nb_treads')}")
-        bash_command = f"topas {input_file_path}"
-        simulation = subprocess.run(bash_command.split(), capture_output=True, shell=True, executable='/bin/bash')
+        simulation = subprocess.run(["/topas/topas/bin/topas", input_file_path], capture_output=True)
         self._log_subprocess_output(simulation.stdout)
         self._log_subprocess_output(simulation.stderr)
-
         return output_folder
 
     def _log_subprocess_output(self, pipe):

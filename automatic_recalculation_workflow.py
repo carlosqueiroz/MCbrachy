@@ -143,7 +143,7 @@ if __name__ == "__main__":
             final_output_folder = os.path.join(OUTPUT_PATH, f"final_output_{patient}_{studies}")
             os.mkdir(final_output_folder)
             log_file = os.path.join(simulation_files_path, "logs.logs")
-            logging.basicConfig(filename=log_file, level=logging.INFO,
+            logging.basicConfig(handlers=[logging.FileHandler(log_file), logging.StreamHandler()], level=logging.INFO,
                                 format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
                                 datefmt='%H:%M:%S')
             plan = dicom_extractor.extract_context_from_dicoms(extractor_selected, study_path, final_output_folder)
