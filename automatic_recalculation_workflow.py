@@ -1,18 +1,14 @@
 import getopt
+import logging.config
 import os
-import subprocess
+import shutil
 import sys
-
-from shutil import copy, move
-from clean_output_data.clean_egs_brachy_output import clean_egs_brachy_output
-from clean_output_data.clean_topas_output import clean_topas_output
-from dicom_rt_context_extractor.sources_information_extraction import extract_all_sources_informations
+import numpy as np
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
-from dicom_rt_context_extractor.utils.search_instance_and_convert_coord_in_pixel import find_modality_in_folder, \
-    find_instance_in_folder
-from prostate_calcification_segmentation.calcification_segmentation import segmenting_calcification
-from generate_simulation_input_files.generate_simulation_input_files import generate_whole_egs_brachy_input_file
-from generate_simulation_input_files.generate_simulation_input_files import generate_whole_topas_input_file
+from components.simulation_runners import SimulationRunners
+from components.output_cleaners import OutputCleaners
+from components.input_file_generators import InputFileGenerators
+from components.extractors import DicomExtractors
 from root import ROOT
 
 
@@ -21,7 +17,7 @@ def get_aguments(argv):
     recalculation_algorithm = "topas"
     segment_calcification = False
     organ_contours_to_use = []
-    number_of_particles = 1e9
+    number_of_particles = 1e4
 
     try:
         opts, args = getopt.getopt(argv, "i:o:a:r:s:p:")
@@ -77,11 +73,62 @@ def get_aguments(argv):
     return organ_contours_to_use, recalculation_algorithm, restructuring, segment_calcification, number_of_particles
 
 
+TOPAS_MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
+                            "vessie": "TG186MeanMaleSoftTissue",
+                            "rectum": "Air",
+                            "uretre": "TG186MeanMaleSoftTissue",
+                            "Bladder Neck": "TG186MeanMaleSoftTissue",
+                            "calcification": "CALCIFICATION_ICRU46"}
+
+EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
+                                 "vessie": "URINARY_BLADDER_EMPTY",
+                                 "rectum": "AIR_TG43",
+                                 "uretre": "URETHRA_WW86",
+                                 "Bladder Neck": "URINARY_BLADDER_EMPTY",
+                                 "prostate_calcification": "CALCIFICATION_ICRU46"}
+
 if __name__ == "__main__":
-    ORGANS_TO_USE, RECALCULATION_ALGORITHM, RESTRUCTURING_FOLDERS, \
-    SEGMENT_CALCIFICATIONS, NUMBER_OF_PARTICLES = get_aguments(sys.argv[1:-2])
-    PATIENTS_DIRECTORY = sys.argv[-2]
-    OUTPUT_PATH = sys.argv[-1]
+    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
+                                                                  "rectum"], False, 1e9)
+
+    PATIENTS_DIRECTORY = r"E:\Volume_workflow\patients"# sys.argv[-2]
+    OUTPUT_PATH = r"E:\Volume_workflow\output"  # sys.argv[-1]
+    extractor_selected = "permanent_implant_brachy"
+    input_file_generator_selected = "egs_brachy_permanent_tg43_implant_brachy"
+    runner_selected = "egs_brachy"
+    output_file_format = "a3ddose"
+    generate_sr = True
+    dicom_extractor = DicomExtractors(segmentation=[])
+    input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
+                                               list_of_desired_structures=ORGANS_TO_USE,
+                                               material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
+                                               egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy',
+                                               batches=1,
+                                               chunk=1,
+                                               add="",
+                                               generate_sr=generate_sr,
+                                               crop=True,
+                                               expand_tg45_phantom=40,
+                                               code_version="commit 5e3c4db75ad1019666d1f4f0d347d2d2f2282848",
+                                               topas_output_type="binary")
+    simulation_runner = SimulationRunners(nb_treads=1, waiting_time=5,
+                                          egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
+
+    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.2",
+                                    dose_summation_type="PLAN",
+                                    patient_orientation="",
+                                    bits_allocated=64,
+                                    series_description="test_to_delete",
+                                    generate_dvh=False,
+                                    generate_sr=generate_sr,
+                                    dvh_calculate_full_volume=False,
+                                    dvh_use_structure_extents=False,
+                                    dvh_comment="Generated by dicompyler-core",
+                                    dvh_normalization_point=[0, 0, 0],
+                                    dvh_interpolation_segments=2,
+                                    dvh_dose_limit=60000,
+                                    prescription_dose=144,
+                                    use_updated_rt_struct=True)
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
@@ -90,85 +137,40 @@ if __name__ == "__main__":
 
         for studies in os.listdir(patient_folder_path):
             study_path = os.path.join(patient_folder_path, studies)
-            # Lets find and extract the rt plan first
-            rt_plan_path = find_modality_in_folder("RTPLAN", study_path)
-            plan = extract_all_sources_informations(rt_plan_path)
-            plan.extract_structures(study_path)
-            plan.extract_dosimetry(study_path)
-            struct = plan.get_structures()
-            if SEGMENT_CALCIFICATIONS:
-                struct.add_mask_from_3d_array(segmenting_calcification(plan, 1.9, study_path),
-                                              roi_name="calcification",
-                                              observation_label="masking souces with cylindrical masks with "
-                                                                "thresholding",
-                                              segmentation_method=1, add_to_original_rt_struct_file=True,
-                                              saving_path=os.path.join(OUTPUT_PATH,
-                                                                       f"updated_{patient}_{studies}_RTSTRUCT.dcm"))
+            simulation_files_path = os.path.join(ROOT, f"simulation_files", f"simulation_files_{patient}_{studies}")
+            os.mkdir(simulation_files_path)
+            final_output_folder = os.path.join(OUTPUT_PATH, f"final_output_{patient}_{studies}")
+            os.mkdir(final_output_folder)
+            log_file = os.path.join(simulation_files_path, "logs.logs")
+            logging.basicConfig(handlers=[logging.FileHandler(log_file), logging.StreamHandler()], level=logging.INFO,
+                                format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+                                datefmt='%H:%M:%S')
+            plan = dicom_extractor.extract_context_from_dicoms(extractor_selected, study_path, final_output_folder)
+            sim_files_folder, meta_data_dict, all_sr_sequence = input_file_generator.generate_input_files(
+                input_file_generator_selected,
+                plan, simulation_files_path)
 
-            if RECALCULATION_ALGORITHM == "egs_brachy":
-                phant_saving_path = os.path.join(ROOT, "simulation_files",
-                                                 f"egs_phant_{patient}_{studies}.egsphant")
-                transform_saving_path = os.path.join(ROOT, "simulation_files",
-                                                     f"source_transform_{patient}_{studies}")
-                input_saving_path = os.path.join(r'/EGSnrc_CLRP/egs_home/egs_brachy',
-                                                 f"input_{patient}_{studies}.egsinp")
-                output_saving_path = os.path.join(ROOT, "simulation_files", f"input_{patient}_{studies}.phantom.3ddose")
-                try:
-                    offsets = generate_whole_egs_brachy_input_file(plan, int(NUMBER_OF_PARTICLES), ORGANS_TO_USE,
-                                                                   transform_saving_path,
-                                                                   input_saving_path,
-                                                                   r'/EGSnrc_CLRP/egs_home/egs_brachy',
-                                                                   phant_saving_path, crop=True)
-                    bash_command = fr"""/EGSnrc_CLRP/HEN_HOUSE/scripts/bin/egs-parallel -v -n 10 -f -d 5 -c"""
-                    splited_bash = bash_command.split()
-                    splited_bash.append(f"egs_brachy -i input_{patient}_{studies}")
-                    simulation = subprocess.run(splited_bash)
-                    copy(rf"/EGSnrc_CLRP/egs_home/egs_brachy/input_{patient}_{studies}.phantom.3ddose",
-                         output_saving_path)
-                    path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
-                    output_rt_dose = os.path.join(OUTPUT_PATH, f"egs_dose_{patient}_{studies}.dcm")
-                    output_rt_dose_err = os.path.join(OUTPUT_PATH, f"egs_err_{patient}_{studies}.dcm")
-                    output_rt_plan = os.path.join(OUTPUT_PATH, f"updated_plan_{patient}_{studies}.dcm")
-                    position = [offsets[0] + struct.x_y_z_origin[2],
-                                offsets[1]+ struct.x_y_z_origin[1],
-                                offsets[2] + struct.x_y_z_origin[0]]
-                    clean_egs_brachy_output(output_saving_path, path_to_rt_dose, rt_plan_path, plan,
-                                            output_rt_dose,
-                                            output_rt_dose_err, output_rt_plan, "Scaling factor gives total dose in GY",
-                                            "Warning, the scailing factor is the dose scailing factor error",
-                                            "recalculation_workflow_egs_brachy:0.1",
-                                            "EGS_BRACHY_TG186_DOSE", position=position)
+            output_folder = simulation_runner.launch_simulation(runner_selected, sim_files_folder,
+                                                                simulation_files_path)
 
-                except NotImplementedError:
-                    continue
+            image_position = np.asarray(plan.structures.x_y_z_origin)
+            if "image_position_offset" in meta_data_dict.keys():
+                image_position += np.asarray(meta_data_dict["image_position_offset"])
 
-            elif RECALCULATION_ALGORITHM == "topas":
-                index_saving_path = os.path.join(OUTPUT_PATH,
-                                                 f"mapping_{patient}_{studies}.bin")
-                input_saving_path = os.path.join(OUTPUT_PATH,
-                                                 f"input_{patient}_{studies}.txt")
-                output_saving_path = os.path.join(OUTPUT_PATH, f"dose_{patient}_{studies}")
-                try:
-                    string_to_add = "i:Ts/NumberOfThreads = -2 \ni:Ts/ShowHistoryCountAtInterval = 10000"
-                    os.chmod(os.path.join(ROOT, "simulation_files", "Muen.dat"), 0o777)
-                    generate_whole_topas_input_file(plan, NUMBER_OF_PARTICLES, ORGANS_TO_USE, output_saving_path,
-                                                    input_saving_path, index_saving_path,
-                                                    output_type="binary", add=string_to_add)
-                    bash_command = f"/topas/topas/bin/topas {input_saving_path}"
-                    os.chmod(input_saving_path, 0o777)
-                    os.chmod(index_saving_path, 0o777)
-                    simulation = subprocess.run(bash_command.split())
-                    path_to_rt_dose = find_instance_in_folder(plan.rt_dose_uid, study_path)
-                    output_rt_dose = os.path.join(OUTPUT_PATH, f"topas_dose_{patient}_{studies}.dcm")
-                    output_rt_dose_err = os.path.join(OUTPUT_PATH, f"topas_err_{patient}_{studies}.dcm")
-                    output_rt_plan = os.path.join(OUTPUT_PATH, f"updated_plan_{patient}_{studies}.dcm")
-                    clean_topas_output(output_saving_path + ".bin", path_to_rt_dose, rt_plan_path, plan, output_rt_dose,
-                                       output_rt_dose_err, output_rt_plan, "Scaling factor gives total dose in GY",
-                                       "Warning, the scailing factor is the dose scailing factor error", "workflow:0",
-                                       "TOPAS_TG186_DOSE")
+            image_orientation_patient = np.asarray(plan.structures.x_y_z_rotation_vectors)
+            if "image_orientation_patient_offset" in meta_data_dict.keys():
+                image_orientation_patient += np.asarray(meta_data_dict["image_orientation_patient_offset"])
 
-                except NotImplementedError:
-                    continue
+            to_dose_factor = plan.dose_factor
+            if "dose_factor_offset" in meta_data_dict.keys():
+                to_dose_factor = to_dose_factor * meta_data_dict["dose_factor_offset"]
+
+            final_output_path = output_cleaner.clean_output(output_file_format, output_folder, final_output_folder,
+                                                            study_path, image_position=image_position,
+                                                            image_orientation_patient=image_orientation_patient,
+                                                            to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
+                                                            log_file=log_file)
+            shutil.rmtree(simulation_files_path)
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
