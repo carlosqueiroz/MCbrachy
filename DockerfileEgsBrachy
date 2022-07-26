@@ -1,4 +1,4 @@
-FROM saoue66/topas:0.1
+FROM saoue66/egs_brachy:0
 
 ARG GIT_USER
 ARG GIT_PASS
@@ -22,14 +22,9 @@ RUN apt install -y git &&\
     git config --global url."https://${GIT_USER}:${GIT_PASS}@gitlab.chudequebec.ca".insteadOf "https://gitlab.chudequebec.ca"&&\
     apt install -y python3.8-venv &&\
     python3 -m venv venv &&\
-    source ./venv/bin/activate &&\
-    pip install --upgrade pip &&\
-    pip install -U -r ./requirements.txt
+    ./venv/bin/pip install -U -r ./requirements.txt
 
 RUN chmod +x ./entrypoint.sh &&\
     sed -i -e 's/\r$//' ./entrypoint.sh
 
-ENV topas="/topas/topas/bin/topas"
-
 ENTRYPOINT ["./entrypoint.sh"]
-

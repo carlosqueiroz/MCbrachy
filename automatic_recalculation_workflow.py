@@ -1,14 +1,15 @@
 import getopt
 import logging.config
 import os
+import shutil
 import sys
 import numpy as np
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
+from components.simulation_runners import SimulationRunners
+from components.output_cleaners import OutputCleaners
+from components.input_file_generators import InputFileGenerators
+from components.extractors import DicomExtractors
 from root import ROOT
-from simulation_runners import SimulationRunners
-from output_cleaners import OutputCleaners
-from input_file_generators import InputFileGenerators
-from extractors import DicomExtractors
 
 
 def get_aguments(argv):
@@ -88,16 +89,14 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
 
 if __name__ == "__main__":
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
-                                                                  "rectum"], False, 1e6)
+                                                                  "rectum"], False, 1e9)
 
-
-
-    PATIENTS_DIRECTORY = sys.argv[-2]
-    OUTPUT_PATH = sys.argv[-1]
+    PATIENTS_DIRECTORY = r"E:\Volume_workflow\patients"# sys.argv[-2]
+    OUTPUT_PATH = r"E:\Volume_workflow\output"  # sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
-    input_file_generator_selected = "topas_permanent_tg43_implant_brachy"
-    runner_selected = "topas"
-    output_file_format = "binary"
+    input_file_generator_selected = "egs_brachy_permanent_tg43_implant_brachy"
+    runner_selected = "egs_brachy"
+    output_file_format = "a3ddose"
     generate_sr = True
     dicom_extractor = DicomExtractors(segmentation=[])
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
@@ -112,15 +111,15 @@ if __name__ == "__main__":
                                                expand_tg45_phantom=40,
                                                code_version="commit 5e3c4db75ad1019666d1f4f0d347d2d2f2282848",
                                                topas_output_type="binary")
-    simulation_runner = SimulationRunners(nb_treads=4, waiting_time=5,
+    simulation_runner = SimulationRunners(nb_treads=1, waiting_time=5,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.2",
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=64,
-                                    series_description="EGS_BRACHY_TG186_DOSE_COMP",
-                                    generate_dvh=True,
+                                    series_description="test_to_delete",
+                                    generate_dvh=False,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
                                     dvh_use_structure_extents=False,
@@ -171,6 +170,7 @@ if __name__ == "__main__":
                                                             image_orientation_patient=image_orientation_patient,
                                                             to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
                                                             log_file=log_file)
+            shutil.rmtree(simulation_files_path)
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
