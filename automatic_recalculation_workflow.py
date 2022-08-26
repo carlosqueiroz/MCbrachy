@@ -89,16 +89,15 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
 
 if __name__ == "__main__":
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
-                                                                  "rectum"], False, 1e9)
-
-    PATIENTS_DIRECTORY = r"E:\Volume_workflow\patients"# sys.argv[-2]
-    OUTPUT_PATH = r"E:\Volume_workflow\output"  # sys.argv[-1]
+                                                                  "rectum"], False, 1e8)
+    PATIENTS_DIRECTORY = sys.argv[-2]
+    OUTPUT_PATH = sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
     input_file_generator_selected = "egs_brachy_permanent_tg43_implant_brachy"
     runner_selected = "egs_brachy"
     output_file_format = "a3ddose"
     generate_sr = True
-    dicom_extractor = DicomExtractors(segmentation=[])
+    dicom_extractor = DicomExtractors(segmentation=[], tg43=True)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
                                                list_of_desired_structures=ORGANS_TO_USE,
                                                material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
@@ -108,17 +107,17 @@ if __name__ == "__main__":
                                                add="",
                                                generate_sr=generate_sr,
                                                crop=True,
-                                               expand_tg45_phantom=40,
+                                               expand_tg45_phantom=100,
                                                code_version="commit 5e3c4db75ad1019666d1f4f0d347d2d2f2282848",
                                                topas_output_type="binary")
-    simulation_runner = SimulationRunners(nb_treads=1, waiting_time=5,
+    simulation_runner = SimulationRunners(nb_treads=4, waiting_time=5,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.2",
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=64,
-                                    series_description="test_to_delete",
+                                    series_description="egs_tg43_validation",
                                     generate_dvh=False,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
@@ -152,12 +151,17 @@ if __name__ == "__main__":
 
             output_folder = simulation_runner.launch_simulation(runner_selected, sim_files_folder,
                                                                 simulation_files_path)
-
-            image_position = np.asarray(plan.structures.x_y_z_origin)
+            image_position = np.asarray([0, 0, 0], dtype=np.float64)
+            if plan.structures_are_built:
+                np.asarray(plan.structures.x_y_z_origin)
             if "image_position_offset" in meta_data_dict.keys():
                 image_position += np.asarray(meta_data_dict["image_position_offset"])
 
-            image_orientation_patient = np.asarray(plan.structures.x_y_z_rotation_vectors)
+
+            image_orientation_patient = np.asarray([0, 0, 0, 0, 0, 0],
+                                                   dtype=np.float64)
+            if plan.structures_are_built:
+                np.asarray(plan.structures.x_y_z_rotation_vectors)
             if "image_orientation_patient_offset" in meta_data_dict.keys():
                 image_orientation_patient += np.asarray(meta_data_dict["image_orientation_patient_offset"])
 

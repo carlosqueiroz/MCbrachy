@@ -185,7 +185,7 @@ class InputFileGenerators:
                                                                                     egs_phant_file_path,
                                                                                     batches, chunk, add,
                                                                                     expand_tg45_phantom,
-                                                                                    generate_sr, code_version)
+                                                                                    generate_sr, code_version, True)
 
         return output_folder, meta_data_dict, all_sr_sequence
 

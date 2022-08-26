@@ -21,9 +21,14 @@ class DicomExtractors:
         self.ldr_brachy = self._extract_ldr_brachy_context
 
     def _extract_permanent_implant_brachy_context(self, input_folder: str, output_folder: str) -> str:
+        tg43 = False
+        if hasattr(self, "tg43"):
+            tg43 = self.__getattribute__("tg43")
+
         rt_plan_path = find_modality_in_folder("RTPLAN", input_folder)
         plan = extract_all_sources_informations(rt_plan_path)
-        plan.extract_structures(input_folder)
+        if not tg43:
+            plan.extract_structures(input_folder)
         plan.extract_dosimetry(input_folder)
         if hasattr(self, "segmentation"):
             if "prostate_calcification" in self.__getattribute__("segmentation"):
