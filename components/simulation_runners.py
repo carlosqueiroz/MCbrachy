@@ -50,7 +50,12 @@ class SimulationRunners:
         splited_bash = bash_command.split()
         file_name_no_ext = input_name.replace(".egsinp", "")
         splited_bash.append(fr"egs_brachy -i {file_name_no_ext}")
-        simulation = subprocess.run(splited_bash, capture_output=True)
+        if nb_treads == 0:
+            bash_command = fr"egs_brachy -i {file_name_no_ext}"
+            splited_bash = bash_command.split()
+            simulation = subprocess.run(splited_bash, capture_output=True)
+        else:
+            simulation = subprocess.run(splited_bash, capture_output=True)
         self._log_subprocess_output(simulation.stdout)
         self._log_subprocess_output(simulation.stderr)
         copy(os.path.join(self.__getattribute__("egs_brachy_home"), f"{file_name_no_ext}.phantom.3ddose"),

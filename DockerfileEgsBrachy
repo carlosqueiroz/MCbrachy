@@ -14,7 +14,8 @@ COPY . /workflow
 
 SHELL ["/bin/bash", "-c"]
 
-RUN chmod ugo+x -R /workflow
+RUN chmod ugo+x -R /workflow &&\
+    mkdir /output
 
 RUN apt-get update -y
 
@@ -27,4 +28,4 @@ RUN apt install -y git &&\
 RUN chmod +x ./entrypoint.sh &&\
     sed -i -e 's/\r$//' ./entrypoint.sh
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/workflow/entrypoint.sh"]

@@ -14,7 +14,8 @@ COPY . /workflow
 
 SHELL ["/bin/bash", "-c"]
 
-RUN chmod ugo+x -R /workflow
+RUN chmod ugo+x -R /workflow &&\
+    mkdir /output
 
 RUN apt-get update -y
 

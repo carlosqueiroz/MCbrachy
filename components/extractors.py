@@ -29,6 +29,7 @@ class DicomExtractors:
         plan = extract_all_sources_informations(rt_plan_path)
         if not tg43:
             plan.extract_structures(input_folder)
+
         plan.extract_dosimetry(input_folder)
         if hasattr(self, "segmentation"):
             if "prostate_calcification" in self.__getattribute__("segmentation"):

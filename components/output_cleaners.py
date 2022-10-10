@@ -52,7 +52,7 @@ class OutputCleaners:
 
     def _3ddose_to_dicom(self, input_folder, output_path,
                          dicom_folder, image_position=None, image_orientation_patient=None,
-                         to_dose_factor=1.0, sr_item_list=None, log_file=None):
+                         to_dose_factor=1.0, sr_item_list=None, log_file=None, flipped=False):
         if image_position is None:
             image_position = [0, 0, 0]
         if image_orientation_patient is None:
@@ -68,12 +68,17 @@ class OutputCleaners:
         completed = False
         try:
             open_3ddose = DoseFile(output_3ddose_path, load_uncertainty=True)
-            dose_data = np.flip(open_3ddose.dose, axis=0)
-            std_data = np.flip(open_3ddose.uncertainty, axis=0)
+            if flipped:
+                dose_data = np.flip(open_3ddose.dose, axis=0)
+                std_data = np.flip(open_3ddose.uncertainty, axis=0)
+            else:
+                dose_data = open_3ddose.dose
+                std_data = open_3ddose.uncertainty
             factor_from_cm_to_mm = 10
             voxel_size = (factor_from_cm_to_mm * open_3ddose.spacing[2][0],
                           factor_from_cm_to_mm * open_3ddose.spacing[1][0],
                           factor_from_cm_to_mm * open_3ddose.spacing[0][0])
+
             dose_comment = ""
             if hasattr(self, "dose_comment"):
                 dose_comment = self.__getattribute__("dose_comment")
@@ -278,7 +283,7 @@ class OutputCleaners:
 
     def clean_output(self, initial_file_type: str, input_folder, output_path,
                      dicom_folder, image_position=None, image_orientation_patient=None,
-                     to_dose_factor=1.0, sr_item_list=None, log_file=None):
+                     to_dose_factor=1.0, sr_item_list=None, log_file=None, flipped=False):
         assert initial_file_type in ["a3ddose", "binary"]
         if image_position is None:
             image_position = [0, 0, 0]
@@ -287,7 +292,7 @@ class OutputCleaners:
 
         return self.__getattribute__(initial_file_type)(input_folder, output_path, dicom_folder, image_position,
                                                         image_orientation_patient, to_dose_factor, sr_item_list,
-                                                        log_file)
+                                                        log_file, flipped)
 
     def _generate_dvh(self, dose_saving_path, dicom_folder, to_dose_factor):
         if hasattr(self, "use_updated_rt_struct"):

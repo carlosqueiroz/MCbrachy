@@ -107,10 +107,10 @@ class InputFileGenerators:
         total_particles = self.__getattribute__("total_particles")
         list_of_desired_structures = self.__getattribute__("list_of_desired_structures")
         material_attribution_dict = self.__getattribute__("material_attribution_dict")
-        path_to_transform_file = os.path.join(output_folder, f"transformation_file_{plan.patient}_{plan.study}")
-        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.egsinp")
+        path_to_transform_file = os.path.join(output_folder, f"transformation_file_{plan.patient}_{plan.study}".replace(" ", "_"))
+        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.egsinp".replace(" ", "_"))
         egs_brachy_home = self.__getattribute__("egs_brachy_home")
-        egs_phant_file_path = os.path.join(output_folder, f"egs_phant_{plan.patient}_{plan.study}.egsphant")
+        egs_phant_file_path = os.path.join(output_folder, f"egs_phant_{plan.patient}_{plan.study}.egsphant".replace(" ", "_"))
         if hasattr(self, "batches"):
             batches = self.__getattribute__("batches")
         else:
@@ -149,10 +149,10 @@ class InputFileGenerators:
 
     def _genrerate_egs_brachy_permanent_implant_tg43_brachy_input_files(self, plan, output_folder: str) -> Tuple:
         total_particles = self.__getattribute__("total_particles")
-        path_to_transform_file = os.path.join(output_folder, f"transformation_file_{plan.patient}_{plan.study}")
-        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.egsinp")
+        path_to_transform_file = os.path.join(output_folder, f"transformation_file_{plan.patient}_{plan.study}".replace(" ", "_"))
+        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.egsinp".replace(" ", "_"))
         egs_brachy_home = self.__getattribute__("egs_brachy_home")
-        egs_phant_file_path = os.path.join(output_folder, f"egs_phant_{plan.patient}_{plan.study}.egsphant")
+        egs_phant_file_path = os.path.join(output_folder, f"egs_phant_{plan.patient}_{plan.study}.egsphant".replace(" ", "_"))
         if hasattr(self, "batches"):
             batches = self.__getattribute__("batches")
         else:
