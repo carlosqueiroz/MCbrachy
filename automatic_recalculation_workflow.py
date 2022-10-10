@@ -28,13 +28,13 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
 
 if __name__ == "__main__":
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
-                                                                  "rectum"], False, 1e8)
+                                                                  "rectum"], False, 1e9)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
-    input_file_generator_selected = "egs_brachy_permanent_implant_brachy"
-    runner_selected = "egs_brachy"
-    output_file_format = "a3ddose"
+    input_file_generator_selected = "topas_permanent_tg43_implant_brachy"
+    runner_selected = "topas"
+    output_file_format = "binary"
     generate_sr = True
     dicom_extractor = DicomExtractors(segmentation=[], tg43=False)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
@@ -49,16 +49,16 @@ if __name__ == "__main__":
                                                expand_tg45_phantom=500,
                                                code_version="commit 5e3c4db75ad1019666d1f4f0d347d2d2f2282848",
                                                topas_output_type="binary")
-    simulation_runner = SimulationRunners(nb_treads=12, waiting_time=20,
+    simulation_runner = SimulationRunners(nb_treads=8, waiting_time=20,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
 
-    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.3",
+    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.3: commit: a15abb888d8668cd6ee41f53b113c928ae9752e5",
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=16,
                                     series_description="Workflow_bench_marking_tg186_validation",
-                                    generate_dvh=True,
+                                    generate_dvh=False,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
                                     dvh_use_structure_extents=False,
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                                     dvh_interpolation_segments=2,
                                     dvh_dose_limit=60000,
                                     prescription_dose=144,
-                                    use_updated_rt_struct=True)
+                                    use_updated_rt_struct=False)
 
 
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
             if "image_position_offset" in meta_data_dict.keys():
                 image_position += np.asarray(meta_data_dict["image_position_offset"])
 
-            image_orientation_patient = np.asarray([0, 0, 0, 0, 0, 0],
+            image_orientation_patient = np.asarray([1, 0, 0, 0, 1, 0],
                                                    dtype=np.float64)
             if plan.structures_are_built:
                 image_orientation_patient = np.asarray(plan.structures.x_y_z_rotation_vectors)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                                                             image_orientation_patient=image_orientation_patient,
                                                             to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
                                                             log_file=log_file, flipped=flipped)
-            shutil.rmtree(simulation_files_path)
+            # shutil.rmtree(simulation_files_path)
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)

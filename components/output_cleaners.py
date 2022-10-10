@@ -157,7 +157,7 @@ class OutputCleaners:
 
     def _binary_to_dicom(self, input_folder, output_path,
                          dicom_folder, image_position=None, image_orientation_patient=None,
-                         to_dose_factor=1.0, sr_item_list=None, log_file=None):
+                         to_dose_factor=1.0, sr_item_list=None, log_file=None, flipped=False):
         output_bin_path = ""
         output_bin_file_name = ""
         for file_name in os.listdir(input_folder):
@@ -168,8 +168,13 @@ class OutputCleaners:
         completed = False
         try:
             open_bin = BinnedResult(output_bin_path)
-            dose_data = np.flip(open_bin.data["Sum"], axis=0)
-            std_data = np.flip(open_bin.data['Standard_Deviation'], axis=0)
+            if flipped:
+                dose_data = np.flip(open_bin.data["Sum"], axis=0)
+                std_data = np.flip(open_bin.data['Standard_Deviation'], axis=0)
+            else:
+                dose_data = open_bin.data["Sum"]
+                std_data = open_bin.data['Standard_Deviation']
+
             factor_from_cm_to_mm = 10
             voxel_size = (open_bin.dimensions[0].bin_width * factor_from_cm_to_mm,
                           open_bin.dimensions[1].bin_width * factor_from_cm_to_mm,
@@ -295,10 +300,10 @@ class OutputCleaners:
                                                         log_file, flipped)
 
     def _generate_dvh(self, dose_saving_path, dicom_folder, to_dose_factor):
+        rt_struct_path = find_modality_in_folder("RTSTRUCT", dicom_folder)
         if hasattr(self, "use_updated_rt_struct"):
             if self.__getattribute__("use_updated_rt_struct"):
-                dicom_folder = os.path.dirname(dose_saving_path)
-        rt_struct_path = find_modality_in_folder("RTSTRUCT", dicom_folder)
+                rt_struct_path = find_modality_in_folder("RTSTRUCT", os.path.dirname(dose_saving_path))
         dvh_comment = "Generated from dycompyler-core "
         if hasattr(self, "dvh_comment"):
             dvh_comment += self.__getattribute__("dvh_comment")
@@ -324,9 +329,9 @@ class OutputCleaners:
         if hasattr(self, "dvh_dose_limit"):
             dvh_use_structure_extents = self.__getattribute__("dvh_dose_limit")
 
-        open_rt_dose = pydicom.dcmread(find_modality_in_folder("RTDOSE", dicom_folder))
+        open_rt_dose = pydicom.dcmread(find_modality_in_folder("RTDOSE", os.path.dirname(dose_saving_path)))
         pixel_spacing = open_rt_dose.PixelSpacing
-        generate_and_add_all_dvh_to_dicom(find_modality_in_folder("RTDOSE", dicom_folder),
+        generate_and_add_all_dvh_to_dicom(find_modality_in_folder("RTDOSE", os.path.dirname(dose_saving_path)),
                                           rt_struct_path, dvh_comment=dvh_comment,
                                           dose_scaling_factor=to_dose_factor,
                                           dose_type="PHYSICAL",

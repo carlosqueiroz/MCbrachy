@@ -33,7 +33,7 @@ class InputFileGenerators:
         total_particles = self.__getattribute__("total_particles")
         frequence_of_print = f"i:Ts/ShowHistoryCountAtInterval = {int(total_particles // 100)}"
         path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.txt")
-        muen_path = os.path.join(ROOT, "../simulation_files", "Muen.dat")
+        muen_path = os.path.join(ROOT, "simulation_files", "Muen.dat")
         output_path = os.path.join(output_folder, f"dose_{plan.patient}_{plan.study}")
         if hasattr(self, "add"):
             add = self.__getattribute__("add")

@@ -15,7 +15,9 @@ COPY . /workflow
 SHELL ["/bin/bash", "-c"]
 
 RUN chmod ugo+x -R /workflow &&\
-    mkdir /output
+    mkdir /output &&\
+    mkdir /patients
+
 
 RUN apt-get update -y
 
