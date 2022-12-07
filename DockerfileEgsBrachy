@@ -18,6 +18,9 @@ RUN chmod ugo+x -R /workflow &&\
     mkdir /output &&\
     mkdir /patients
 
+RUN rm /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
+    mv ./material.dat /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
+    chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat
 
 RUN apt-get update -y
 

@@ -66,12 +66,12 @@ class InputFileGenerators:
 
     def _genrerate_topas_permanent_implant_brachy_input_files(self, plan, output_folder: str):
         total_particles = self.__getattribute__("total_particles")
-        frequence_of_print = f"i:Ts/ShowHistoryCountAtInterval = {total_particles // 100}\n"
+        frequence_of_print = f"i:Ts/ShowHistoryCountAtInterval = {int(total_particles // 100)}\n"
         list_of_desired_structures = self.__getattribute__("list_of_desired_structures")
         material_attribution_dict = self.__getattribute__("material_attribution_dict")
         path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.txt")
         path_to_save_3d_index = os.path.join(output_folder, f"index_3d_{plan.patient}_{plan.study}.bin")
-        muen_path = os.path.join(ROOT, "../simulation_files", "Muen.dat")
+        muen_path = os.path.join(ROOT, "simulation_files", "Muen.dat")
         output_path = os.path.join(output_folder, f"dose_{plan.patient}_{plan.study}.bin")
         if hasattr(self, "add"):
             add = self.__getattribute__("add")
@@ -93,13 +93,17 @@ class InputFileGenerators:
             topas_output_type = self.__getattribute__("topas_output_type")
         else:
             topas_output_type = "binary"
-        meta_data_dict, all_sr_sequence = generate_whole_topas_input_file(plan, total_particles,
+        meta_data_dict = generate_whole_topas_input_file(plan, int(total_particles),
                                                                           list_of_desired_structures,
                                                                           material_attribution_dict,
                                                                           output_path,
                                                                           path_to_save_input_file,
-                                                                          path_to_save_3d_index, topas_output_type
-                                                                          , add=frequence_of_print + add)
+                                                                          path_to_save_3d_index,
+                                                                          topas_output_type,
+                                                                          muen_path,
+                                                                          add=frequence_of_print + add,
+                                                                          crop=crop)
+        all_sr_sequence = []
 
         return output_folder, meta_data_dict, all_sr_sequence
 

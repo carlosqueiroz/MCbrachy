@@ -208,8 +208,9 @@ class OutputCleaners:
                                                                 image_orientation_patient=image_orientation_patient,
                                                                 image_position_patient=image_position,
                                                                 patient_orientation=patient_orientation)
-            rt_dose.add_dose_grid(dose_data, voxel_size, True, True)
+            rt_dose.add_dose_grid(dose_data, voxel_size, False, True)
             rt_dose.build()
+
 
             rt_dose_error = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
                                                                       dose_type="ERROR", dose_comment=dose_comment,
@@ -219,7 +220,7 @@ class OutputCleaners:
                                                                       image_orientation_patient=image_orientation_patient,
                                                                       image_position_patient=image_position,
                                                                       patient_orientation=patient_orientation)
-            rt_dose_error.add_dose_grid(std_data, voxel_size, True, True)
+            rt_dose_error.add_dose_grid(std_data, voxel_size, False, True)
             rt_dose_error.build()
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
@@ -329,9 +330,9 @@ class OutputCleaners:
         if hasattr(self, "dvh_dose_limit"):
             dvh_use_structure_extents = self.__getattribute__("dvh_dose_limit")
 
-        open_rt_dose = pydicom.dcmread(find_modality_in_folder("RTDOSE", os.path.dirname(dose_saving_path)))
+        open_rt_dose = pydicom.dcmread(dose_saving_path)
         pixel_spacing = open_rt_dose.PixelSpacing
-        generate_and_add_all_dvh_to_dicom(find_modality_in_folder("RTDOSE", os.path.dirname(dose_saving_path)),
+        generate_and_add_all_dvh_to_dicom(dose_saving_path,
                                           rt_struct_path, dvh_comment=dvh_comment,
                                           dose_scaling_factor=to_dose_factor,
                                           dose_type="PHYSICAL",
