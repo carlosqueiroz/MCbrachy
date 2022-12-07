@@ -108,7 +108,7 @@ class OutputCleaners:
                                                                 image_orientation_patient=image_orientation_patient,
                                                                 image_position_patient=image_position,
                                                                 patient_orientation=patient_orientation)
-            rt_dose.add_dose_grid(dose_data, voxel_size, True, True)
+            rt_dose.add_dose_grid(dose_data, voxel_size, False, True)
             rt_dose.build()
 
             rt_dose_error = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
