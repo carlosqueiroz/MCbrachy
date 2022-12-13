@@ -29,7 +29,7 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
 
 if __name__ == "__main__":
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "uretre",
-                                                                  "rectum"], False, 1e9)
+                                                                  "rectum"], False, 1e8)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
@@ -48,18 +48,18 @@ if __name__ == "__main__":
                                                generate_sr=generate_sr,
                                                crop=True,
                                                expand_tg45_phantom=500,
-                                               code_version="commit 5e3c4db75ad1019666d1f4f0d347d2d2f2282848",
+                                               code_version="commit 8ffa121f685b8a070d69b781d957bc0208fb608c",
                                                topas_output_type="binary")
-    simulation_runner = SimulationRunners(nb_treads=3, waiting_time=20,
+    simulation_runner = SimulationRunners(nb_treads=12, waiting_time=20,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
 
-    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.3: commit: a15abb888d8668cd6ee41f53b113c928ae9752e5",
+    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.3: commit: 8ffa121f685b8a070d69b781d957bc0208fb608c",
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=16,
-                                    series_description="Workflow_bench_marking_tg186_validation",
-                                    generate_dvh=False,
+                                    series_description="Workflow_benchmarking_tg186_validation_article_2023",
+                                    generate_dvh=True,
                                     generate_sr=generate_sr,
                                     dvh_calculate_full_volume=False,
                                     dvh_use_structure_extents=False,
@@ -69,7 +69,6 @@ if __name__ == "__main__":
                                     dvh_dose_limit=60000,
                                     prescription_dose=144,
                                     use_updated_rt_struct=False)
-
 
 
     for patient in os.listdir(PATIENTS_DIRECTORY):
