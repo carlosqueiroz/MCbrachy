@@ -328,7 +328,7 @@ class OutputCleaners:
             dvh_use_structure_extents = self.__getattribute__("dvh_use_structure_extents")
         dvh_dose_limit = None
         if hasattr(self, "dvh_dose_limit"):
-            dvh_use_structure_extents = self.__getattribute__("dvh_dose_limit")
+            dvh_dose_limit = self.__getattribute__("dvh_dose_limit")
 
         open_rt_dose = pydicom.dcmread(dose_saving_path)
         pixel_spacing = open_rt_dose.PixelSpacing

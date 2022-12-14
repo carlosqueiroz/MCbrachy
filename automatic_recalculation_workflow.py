@@ -54,7 +54,7 @@ if __name__ == "__main__":
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
 
-    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.3: commit: 8ffa121f685b8a070d69b781d957bc0208fb608c",
+    output_cleaner = OutputCleaners(software="Systematic MC recalculation Workflow V0.3: commit: 7404e247f7db7e1f9c5f995bcbe1fd3d965311b3",
                                     dose_summation_type="PLAN",
                                     patient_orientation="",
                                     bits_allocated=16,
