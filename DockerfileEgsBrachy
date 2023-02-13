@@ -20,7 +20,9 @@ RUN chmod ugo+x -R /workflow &&\
 
 RUN rm /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
     mv ./material.dat /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
-    chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat
+    chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
+    mv ./Advantage_IAI_125A_wrapped.geom /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Advantage_IAI_125A/Advantage_IAI_125A_wrapped.geom &&\
+    chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Advantage_IAI_125A/Advantage_IAI_125A_wrapped.geom
 
 RUN apt-get update -y
 

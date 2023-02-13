@@ -110,17 +110,19 @@ class OutputCleaners:
                                                                 patient_orientation=patient_orientation)
             rt_dose.add_dose_grid(dose_data, voxel_size, True, True)
             rt_dose.build()
-
-            rt_dose_error = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
-                                                                      dose_type="ERROR", dose_comment=dose_comment,
-                                                                      software=software, dose_units="GY",
-                                                                      bits_allocated=bits_allocated,
-                                                                      dose_summation_type=dose_summation_type,
-                                                                      image_orientation_patient=image_orientation_patient,
-                                                                      image_position_patient=image_position,
-                                                                      patient_orientation=patient_orientation)
-            rt_dose_error.add_dose_grid(std_data * dose_data, voxel_size, True, True)
-            rt_dose_error.build()
+            if not np.isnan(std_data).sum() > 0:
+                rt_dose_error = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
+                                                                          dose_type="ERROR", dose_comment=dose_comment,
+                                                                          software=software, dose_units="GY",
+                                                                          bits_allocated=bits_allocated,
+                                                                          dose_summation_type=dose_summation_type,
+                                                                          image_orientation_patient=image_orientation_patient,
+                                                                          image_position_patient=image_position,
+                                                                          patient_orientation=patient_orientation)
+                rt_dose_error.add_dose_grid(std_data * dose_data, voxel_size, True, True)
+                rt_dose_error.build()
+            else:
+                rt_dose_error = None
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
                                            output_3ddose_file_name, to_dose_factor)
@@ -211,17 +213,19 @@ class OutputCleaners:
             rt_dose.add_dose_grid(dose_data, voxel_size, False, True)
             rt_dose.build()
 
-
-            rt_dose_error = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
-                                                                      dose_type="ERROR", dose_comment=dose_comment,
-                                                                      software=software, dose_units="GY",
-                                                                      bits_allocated=bits_allocated,
-                                                                      dose_summation_type=dose_summation_type,
-                                                                      image_orientation_patient=image_orientation_patient,
-                                                                      image_position_patient=image_position,
-                                                                      patient_orientation=patient_orientation)
-            rt_dose_error.add_dose_grid(std_data, voxel_size, False, True)
-            rt_dose_error.build()
+            if not np.isnan(std_data).sum() > 0:
+                rt_dose_error = create_rt_dose_from_scratch.RTDoseBuilder(dose_grid_scaling=to_dose_factor,
+                                                                          dose_type="ERROR", dose_comment=dose_comment,
+                                                                          software=software, dose_units="GY",
+                                                                          bits_allocated=bits_allocated,
+                                                                          dose_summation_type=dose_summation_type,
+                                                                          image_orientation_patient=image_orientation_patient,
+                                                                          image_position_patient=image_position,
+                                                                          patient_orientation=patient_orientation)
+                rt_dose_error.add_dose_grid(std_data, voxel_size, False, True)
+                rt_dose_error.build()
+            else:
+                rt_dose_error = None
 
             storing = self._store_in_dicom(output_path, dicom_folder, rt_dose, rt_dose_error,
                                            output_bin_file_name, to_dose_factor)
@@ -261,25 +265,27 @@ class OutputCleaners:
         path_to_rt_plan = find_modality_in_folder("RTPLAN", dicom_folder)
         if hasattr(self, "series_description"):
             dose.rt_dose.SeriesDescription = self.__getattribute__("series_description")
-        std.rt_dose.SeriesDescription = dose.rt_dose.SeriesDescription
-        std.rt_dose.SeriesInstanceUID = dose.rt_dose.SeriesInstanceUID
-        std.rt_dose.SeriesNumber = dose.rt_dose.SeriesNumber
-        std.rt_dose.InstanceNumber = dose.rt_dose.InstanceNumber + 1
+        if std is not None:
+            std.rt_dose.SeriesDescription = dose.rt_dose.SeriesDescription
+            std.rt_dose.SeriesInstanceUID = dose.rt_dose.SeriesInstanceUID
+            std.rt_dose.SeriesNumber = dose.rt_dose.SeriesNumber
+            std.rt_dose.InstanceNumber = dose.rt_dose.InstanceNumber + 1
 
         dose_saving_path = os.path.join(output_path, "dose_" + file_naming + ".dcm")
         dose.save_rt_dose_to(dose_saving_path)
         adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(dose_saving_path,
                                                                            path_to_rt_plan)
-
-        error_saving_path = os.path.join(output_path, "error_" + file_naming + ".dcm")
-        std.save_rt_dose_to(error_saving_path)
-        adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(error_saving_path,
-                                                                           path_to_rt_plan)
+        if std is not None:
+            error_saving_path = os.path.join(output_path, "error_" + file_naming + ".dcm")
+            std.save_rt_dose_to(error_saving_path)
+            adapt_rt_dose_to_existing_dicoms.adapt_rt_dose_to_existing_rt_plan(error_saving_path,
+                                                                            path_to_rt_plan)
 
         path_updated_plan = os.path.join(output_path, "updated_plan_" + file_naming + ".dcm")
         adapt_rt_dose_to_existing_dicoms.add_reference_in_rt_plan(path_to_rt_plan, dose_saving_path,
                                                                   path_updated_plan)
-        adapt_rt_dose_to_existing_dicoms.add_reference_in_rt_plan(path_updated_plan, error_saving_path)
+        if std is not None:
+            adapt_rt_dose_to_existing_dicoms.add_reference_in_rt_plan(path_updated_plan, error_saving_path)
 
         if hasattr(self, "generate_dvh"):
             if self.__getattribute__("generate_dvh"):
