@@ -30,7 +30,6 @@ class DicomExtractors:
 
         rt_plan_path = find_modality_in_folder("RTPLAN", input_folder)
         plan = extract_all_sources_informations(rt_plan_path)
-        plan.list_of_sources[0].source_manufacturer = "Draximage"
         if build_structures:
             plan.extract_structures(input_folder)
             if hasattr(self, "recreate_struct"):
