@@ -21,15 +21,23 @@ class DicomExtractors:
         self.ldr_brachy = self._extract_ldr_brachy_context
 
     def _extract_permanent_implant_brachy_context(self, input_folder: str, output_folder: str) -> str:
-        tg43 = False
-        if hasattr(self, "tg43"):
-            tg43 = self.__getattribute__("tg43")
+        build_structures = True
+        if hasattr(self, "build_structures"):
+            build_structures = self.__getattribute__("build_structures")
+        series_description = None
+        if hasattr(self, "series_description"):
+            series_description = self.__getattribute__("series_description")
 
         rt_plan_path = find_modality_in_folder("RTPLAN", input_folder)
         plan = extract_all_sources_informations(rt_plan_path)
-        # plan.list_of_sources[0].source_manufacturer = "Mills Bio. Parm."
-        if not tg43:
+        plan.list_of_sources[0].source_manufacturer = "Draximage"
+        if build_structures:
             plan.extract_structures(input_folder)
+            if hasattr(self, "recreate_struct"):
+                if self.recreate_struct:
+                    plan.structures.recreate_rt_struct_from_current_structure(series_description,
+                                                                              os.path.join(output_folder,
+                                                                                           "recreated_rt_struct.dcm"))
         plan.extract_dosimetry(input_folder)
         if hasattr(self, "segmentation"):
             if "prostate_calcification" in self.__getattribute__("segmentation"):
@@ -48,13 +56,14 @@ class DicomExtractors:
         return self.__getattribute__(treatment_modality)(input_folder, output_folder)
 
     def _segment_prostate_calcification(self, plan, input_folder: str, output_folder):
-        prostate_calcification_mask = segmenting_calcification(plan, 1.9, input_folder)
+        prostate_calcification_mask = segmenting_calcification(plan, 2.0, input_folder)
         plan.structures.add_mask_from_3d_array(prostate_calcification_mask,
                                                roi_name="prostate_calcification",
                                                observation_label="masking sources with cylindrical masks with"
                                                                  " thresholding",
-                                               segmentation_method=1, add_to_original_rt_struct_file=True,
+                                               segmentation_method=1, add_to_original_rt_struct_file=False,
                                                saving_path=os.path.join(output_folder,
                                                                         f"updated_{plan.patient}_{plan.study}"
-                                                                        f"_RTSTRUCT.dcm")
+                                                                        f"_RTSTRUCT.dcm"),
+                                               can_be_filled=False
                                                )
