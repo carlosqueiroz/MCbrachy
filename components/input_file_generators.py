@@ -94,15 +94,15 @@ class InputFileGenerators:
         else:
             topas_output_type = "binary"
         meta_data_dict = generate_whole_topas_input_file(plan, int(total_particles),
-                                                                          list_of_desired_structures,
-                                                                          material_attribution_dict,
-                                                                          output_path,
-                                                                          path_to_save_input_file,
-                                                                          path_to_save_3d_index,
-                                                                          topas_output_type,
-                                                                          muen_path,
-                                                                          add=frequence_of_print + add,
-                                                                          crop=crop)
+                                                         list_of_desired_structures,
+                                                         material_attribution_dict,
+                                                         output_path,
+                                                         path_to_save_input_file,
+                                                         path_to_save_3d_index,
+                                                         topas_output_type,
+                                                         muen_path,
+                                                         add=frequence_of_print + add,
+                                                         crop=crop)
         all_sr_sequence = []
 
         return output_folder, meta_data_dict, all_sr_sequence
@@ -111,10 +111,17 @@ class InputFileGenerators:
         total_particles = self.__getattribute__("total_particles")
         list_of_desired_structures = self.__getattribute__("list_of_desired_structures")
         material_attribution_dict = self.__getattribute__("material_attribution_dict")
-        path_to_transform_file = os.path.join(output_folder, f"transformation_file_{plan.patient}_{plan.study}".replace(" ", "_"))
-        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.egsinp".replace(" ", "_"))
+        path_to_transform_file = os.path.join(output_folder,
+                                              f"transformation_file_{plan.patient}_{plan.study}".replace(" ", "_"))
+        path_to_save_input_file = os.path.join(output_folder,
+                                               f"input_{plan.patient}_{plan.study}.egsinp".replace(" ", "_"))
         egs_brachy_home = self.__getattribute__("egs_brachy_home")
-        egs_phant_file_path = os.path.join(output_folder, f"egs_phant_{plan.patient}_{plan.study}.egsphant".replace(" ", "_"))
+        egs_phant_file_path = os.path.join(output_folder,
+                                           f"egs_phant_{plan.patient}_{plan.study}.egsphant".replace(" ", "_"))
+        if hasattr(self, "ct_calibration_curve"):
+            ct_calibration_curve = self.ct_calibration_curve
+        else:
+            ct_calibration_curve = None
         if hasattr(self, "batches"):
             batches = self.__getattribute__("batches")
         else:
@@ -139,6 +146,10 @@ class InputFileGenerators:
             code_version = self.__getattribute__("code_version")
         else:
             code_version = ""
+        if hasattr(self, "run_mode"):
+            run_mode = self.__getattribute__("run_mode")
+        else:
+            run_mode = "normal"
 
         meta_data_dict, all_sr_sequence = generate_whole_egs_brachy_input_file(plan, total_particles,
                                                                                list_of_desired_structures,
@@ -146,17 +157,21 @@ class InputFileGenerators:
                                                                                path_to_transform_file,
                                                                                path_to_save_input_file,
                                                                                egs_brachy_home, egs_phant_file_path,
-                                                                               batches, chunk, add,
-                                                                               generate_sr, crop, code_version)
+                                                                               run_mode, batches, chunk, add,
+                                                                               generate_sr, crop, ct_calibration_curve,
+                                                                               code_version)
 
         return output_folder, meta_data_dict, all_sr_sequence
 
     def _genrerate_egs_brachy_permanent_implant_tg43_brachy_input_files(self, plan, output_folder: str) -> Tuple:
         total_particles = self.__getattribute__("total_particles")
-        path_to_transform_file = os.path.join(output_folder, f"transformation_file_{plan.patient}_{plan.study}".replace(" ", "_"))
-        path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.egsinp".replace(" ", "_"))
+        path_to_transform_file = os.path.join(output_folder,
+                                              f"transformation_file_{plan.patient}_{plan.study}".replace(" ", "_"))
+        path_to_save_input_file = os.path.join(output_folder,
+                                               f"input_{plan.patient}_{plan.study}.egsinp".replace(" ", "_"))
         egs_brachy_home = self.__getattribute__("egs_brachy_home")
-        egs_phant_file_path = os.path.join(output_folder, f"egs_phant_{plan.patient}_{plan.study}.egsphant".replace(" ", "_"))
+        egs_phant_file_path = os.path.join(output_folder,
+                                           f"egs_phant_{plan.patient}_{plan.study}.egsphant".replace(" ", "_"))
         if hasattr(self, "batches"):
             batches = self.__getattribute__("batches")
         else:

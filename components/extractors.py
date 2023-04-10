@@ -32,16 +32,15 @@ class DicomExtractors:
         plan = extract_all_sources_informations(rt_plan_path)
         if build_structures:
             plan.extract_structures(input_folder)
+            if hasattr(self, "segmentation"):
+                if "prostate_calcification" in self.__getattribute__("segmentation"):
+                    self._segment_prostate_calcification(plan, input_folder, output_folder)
             if hasattr(self, "recreate_struct"):
                 if self.recreate_struct:
                     plan.structures.recreate_rt_struct_from_current_structure(series_description,
                                                                               os.path.join(output_folder,
                                                                                            "recreated_rt_struct.dcm"))
         plan.extract_dosimetry(input_folder)
-        if hasattr(self, "segmentation"):
-            if "prostate_calcification" in self.__getattribute__("segmentation"):
-                self._segment_prostate_calcification(plan, input_folder, output_folder)
-
         return plan
 
     def _extract_hdr_brachy_context(self, input_folder: str, output_folder: str) -> str:

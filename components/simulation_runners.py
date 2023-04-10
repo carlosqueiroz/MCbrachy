@@ -58,8 +58,13 @@ class SimulationRunners:
             simulation = subprocess.run(splited_bash, capture_output=True)
         self._log_subprocess_output(simulation.stdout)
         self._log_subprocess_output(simulation.stderr)
-        copy(os.path.join(self.__getattribute__("egs_brachy_home"), f"{file_name_no_ext}.phantom.3ddose"),
-             os.path.join(output_folder, f"{file_name_no_ext}.phantom.3ddose"))
+        output_3ddose_file_name = ""
+        for file_name in os.listdir(self.__getattribute__("egs_brachy_home")):
+            if file_name.endswith(".3ddose"):
+                output_3ddose_file_name = file_name
+
+        copy(os.path.join(self.__getattribute__("egs_brachy_home"), output_3ddose_file_name),
+             os.path.join(output_folder, output_3ddose_file_name))
 
         return output_folder
 

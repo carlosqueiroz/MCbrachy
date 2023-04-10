@@ -47,6 +47,8 @@ class OutputCleaners:
         sr_builder = SRBuilder(path_to_ref, purpose_seq)
         sr_builder.add_content_sequence(whole_content_sequence)
         sr_builder.build()
+        if hasattr(self, "series_description"):
+            sr_builder.dicom_sr.SeriesDescription = self.series_description
         sr_path = os.path.join(output_path, f"SR_{file_name}.dcm")
         sr_builder.save_sr_to(sr_path)
 
@@ -336,11 +338,12 @@ class OutputCleaners:
         if hasattr(self, "dvh_dose_limit"):
             dvh_dose_limit = self.__getattribute__("dvh_dose_limit")
 
+
         open_rt_dose = pydicom.dcmread(dose_saving_path)
         pixel_spacing = open_rt_dose.PixelSpacing
         generate_and_add_all_dvh_to_dicom(dose_saving_path,
                                           rt_struct_path, dvh_comment=dvh_comment,
-                                          dose_scaling_factor=to_dose_factor,
+                                          dose_scaling_factor=1.0,
                                           dose_type="PHYSICAL",
                                           contribution_type="INCLUDE",
                                           prescription_dose=prescription_dose,
