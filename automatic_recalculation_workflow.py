@@ -18,32 +18,31 @@ TOPAS_MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
                             "Bladder Neck": "TG186MeanMaleSoftTissue",
                             "calcification": "CALCIFICATION_ICRU46"}
 
-EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
-                                 "vessie": "URINARY_BLADDER_EMPTY",
-                                 "rectum": "AIR_TG43",
-                                 "uretre": "URETHRA_WW86",
-                                 "Bladder Neck": "URINARY_BLADDER_EMPTY",
-                                 "prostate_calcification": "CALCIFICATION_ICRU46"}
-# EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "WATER_1.000",
-#                                  "vessie": "WATER_1.000",
-#                                  "rectum": "WATER_1.000",
-#                                  "uretre": "WATER_1.000",
-#                                  "Bladder Neck": "WATER_1.000",
-#                                  "prostate_calcification": "WATER_1.000"}
-
+# EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
+#                                  "vessie": "URINARY_BLADDER_EMPTY",
+#                                  "rectum": "AIR_TG43",
+#                                  "uretre": "URETHRA_WW86",
+#                                  "Bladder Neck": "URINARY_BLADDER_EMPTY",
+#                                  "prostate_calcification": "CALCIFICATION_ICRU46"}
+EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "WATER_1.000",
+                                 "vessie": "WATER_1.000",
+                                 "rectum": "WATER_1.000",
+                                 "uretre": "WATER_1.000",
+                                 "Bladder Neck": "WATER_1.000",
+                                 "prostate_calcification": "WATER_1.000"}
 
 # ["prostate", "vessie", "rectum", "uretre", "prostate_calcification"]
 if __name__ == "__main__":
-    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = ([], False, 1e7)
+    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "rectum", "uretre"], False, 1e7)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
-    input_file_generator_selected = "egs_brachy_permanent_tg43_implant_brachy"
+    input_file_generator_selected = "egs_brachy_permanent_implant_brachy"
     runner_selected = "egs_brachy"
     output_file_format = "a3ddose"
     generate_sr = True
     recreate_struct = True
-    reproduce_tg43_dose_grid = True
+    reproduce_tg43_dose_grid = False
     ct_calibration_curve = np.asarray([[-3025, 0.001],
                                        [-1000, 0.001],
                                        [0, 1.008],
@@ -56,11 +55,11 @@ if __name__ == "__main__":
                                        [10000, 7.365],
                                        [20000, 10.000],
                                        [25000, 10.000]])
-    series_description = "MCTG43_dose_recalculation"
+    series_description = "MCTG43CT_dose_recalculation"
     dicom_extractor = DicomExtractors(segmentation=[], build_structures=True,
                                       recreate_struct=recreate_struct, series_description=series_description)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
-                                               run_mode="normal",
+                                               run_mode="superposition",
                                                list_of_desired_structures=ORGANS_TO_USE,
                                                material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
                                                egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy',
@@ -78,7 +77,7 @@ if __name__ == "__main__":
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(
-        software="Systematic MC recalculation Workflow V0.4: MCTG43 commit: 6e8b9c22f0b5bc2874903f2c56862e174b3ca442",
+        software="Systematic MC recalculation Workflow V0.4: MCTG43 commit: a6103b959926e2c280b3d3870fc0eefab71de342",
         dose_summation_type="PLAN",
         patient_orientation="",
         bits_allocated=16,
