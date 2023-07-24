@@ -50,19 +50,26 @@ class InputFileGenerators:
         if hasattr(self, "code_version"):
             code_version = self.__getattribute__("code_version")
         else:
-            code_version = ""
+            code_version = "3.9"
         if hasattr(self, "topas_output_type"):
             topas_output_type = self.__getattribute__("topas_output_type")
         else:
             topas_output_type = "binary"
-        meta_data_dict = generate_whole_tg43_permanent_implant_topas_input_file(plan, int(total_particles),
+        if hasattr(self, "custom_dose_grid"):
+            custom_dose_grid = self.__getattribute__("custom_dose_grid")
+        else:
+            custom_dose_grid = None
+        meta_data_dict, all_sr_sequence = generate_whole_tg43_permanent_implant_topas_input_file(plan, int(total_particles),
                                                                                 output_path,
                                                                                 path_to_save_input_file,
                                                                                 topas_output_type,
                                                                                 muen_path,
-                                                                                add=frequence_of_print + add)
+                                                                                add=frequence_of_print + add,
+                                                                                custom_dose_grid=custom_dose_grid,
+                                                                                generate_sr=generate_sr,
+                                                                                code_version=code_version)
 
-        return output_folder, meta_data_dict, []
+        return output_folder, meta_data_dict, all_sr_sequence
 
     def _genrerate_topas_permanent_implant_brachy_input_files(self, plan, output_folder: str):
         total_particles = self.__getattribute__("total_particles")
@@ -88,12 +95,16 @@ class InputFileGenerators:
         if hasattr(self, "code_version"):
             code_version = self.__getattribute__("code_version")
         else:
-            code_version = ""
+            code_version = "3.9"
         if hasattr(self, "topas_output_type"):
             topas_output_type = self.__getattribute__("topas_output_type")
         else:
             topas_output_type = "binary"
-        meta_data_dict = generate_whole_topas_input_file(plan, int(total_particles),
+        if hasattr(self, "custom_dose_grid"):
+            custom_dose_grid = self.__getattribute__("custom_dose_grid")
+        else:
+            custom_dose_grid = None
+        meta_data_dict, all_sr_sequence = generate_whole_topas_input_file(plan, int(total_particles),
                                                          list_of_desired_structures,
                                                          material_attribution_dict,
                                                          output_path,
@@ -102,8 +113,8 @@ class InputFileGenerators:
                                                          topas_output_type,
                                                          muen_path,
                                                          add=frequence_of_print + add,
-                                                         crop=crop)
-        all_sr_sequence = []
+                                                         crop=crop, custom_dose_grid=custom_dose_grid,
+                                                                          code_version=code_version)
 
         return output_folder, meta_data_dict, all_sr_sequence
 
