@@ -152,9 +152,13 @@ class OutputCleaners:
                     sr_item_list.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
                                                        CodeSequence_generator("1000", "CUSTOM", "Logs")))
                     rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
-
-                    self._generate_sr(output_path, sr_item_list, rt_plan_path, purpose,
-                                      file_name)
+                    if completed:
+                        self._generate_sr(output_path, sr_item_list, os.path.join(output_path,
+                                                                                  "dose_" + file_name + ".dcm"),
+                                          purpose, file_name)
+                    else:
+                        self._generate_sr(output_path, sr_item_list, rt_plan_path, purpose,
+                                          file_name)
             storing = output_path
 
         return storing
@@ -165,9 +169,9 @@ class OutputCleaners:
         output_bin_path = ""
         output_bin_file_name = ""
         for file_name in os.listdir(input_folder):
-            if file_name.endswith(".bin"):
-                output_bin_path = os.path.join(input_folder, file_name)
-                output_bin_file_name = file_name.replace(".bin", "")
+            if file_name.endswith(".binheader"):
+                output_bin_file_name = file_name.replace(".binheader", ".bin")
+                output_bin_path = os.path.join(input_folder, output_bin_file_name)
 
         completed = False
         try:
@@ -255,9 +259,13 @@ class OutputCleaners:
                     sr_item_list.append(TEXT_generator("HAS ACQ CONTEXT", logs_as_text,
                                                        CodeSequence_generator("1000", "CUSTOM", "Logs")))
                     rt_plan_path = find_modality_in_folder("RTPLAN", dicom_folder)
-
-                    self._generate_sr(output_path, sr_item_list, rt_plan_path, purpose,
-                                      file_name)
+                    if completed:
+                        self._generate_sr(output_path, sr_item_list, os.path.join(output_path,
+                                                                                  "dose_" + file_name + ".dcm"),
+                                          purpose, file_name)
+                    else:
+                        self._generate_sr(output_path, sr_item_list, rt_plan_path, purpose,
+                                          file_name)
             storing = output_path
 
         return storing

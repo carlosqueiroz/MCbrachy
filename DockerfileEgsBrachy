@@ -1,4 +1,4 @@
-FROM saoue66/egs_brachy:0
+FROM saoue66/egs_brachy:0.1
 
 ARG GIT_USER
 ARG GIT_PASS

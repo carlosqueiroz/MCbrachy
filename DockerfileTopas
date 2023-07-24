@@ -1,4 +1,4 @@
-FROM saoue66/topas:0.1
+FROM saoue66/topas:0.2
 
 ARG GIT_USER
 ARG GIT_PASS

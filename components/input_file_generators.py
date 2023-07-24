@@ -72,7 +72,7 @@ class InputFileGenerators:
         path_to_save_input_file = os.path.join(output_folder, f"input_{plan.patient}_{plan.study}.txt")
         path_to_save_3d_index = os.path.join(output_folder, f"index_3d_{plan.patient}_{plan.study}.bin")
         muen_path = os.path.join(ROOT, "simulation_files", "Muen.dat")
-        output_path = os.path.join(output_folder, f"dose_{plan.patient}_{plan.study}.bin")
+        output_path = os.path.join(output_folder, f"dose_{plan.patient}_{plan.study}")
         if hasattr(self, "add"):
             add = self.__getattribute__("add")
         else:
