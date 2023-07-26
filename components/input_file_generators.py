@@ -29,6 +29,9 @@ class InputFileGenerators:
         self.topas_ldr_brachy = self._genrerate_topas_ldr_brachy_input_files
         self.egs_brachy_ldr_brachy = self._genrerate_egs_brachy_ldr_brachy_input_files
 
+    def reset_custom_grid(self, custom_grid):
+        self.__setattr__("custom_dose_grid", custom_grid)
+
     def _genrerate_topas_permanent_tg43_implant_brachy_input_files(self, plan, output_folder: str):
         total_particles = self.__getattribute__("total_particles")
         frequence_of_print = f"i:Ts/ShowHistoryCountAtInterval = {int(total_particles // 100)}"

@@ -13,36 +13,39 @@ from root import ROOT
 
 TOPAS_MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
                             "vessie": "TG186MeanMaleSoftTissue",
-                            "rectum": "Air",
+                            "rectum": "ICRPRectum",
                             "uretre": "TG186MeanMaleSoftTissue",
                             "Bladder Neck": "TG186MeanMaleSoftTissue",
                             "calcification": "CALCIFICATION_ICRU46"}
 
-# EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
-#                                  "vessie": "URINARY_BLADDER_EMPTY",
-#                                  "rectum": "AIR_TG43",
-#                                  "uretre": "URETHRA_WW86",
-#                                  "Bladder Neck": "URINARY_BLADDER_EMPTY",
-#                                  "prostate_calcification": "CALCIFICATION_ICRU46"}
-EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "WATER_1.000",
-                                 "vessie": "WATER_1.000",
-                                 "rectum": "WATER_1.000",
-                                 "uretre": "WATER_1.000",
-                                 "Bladder Neck": "WATER_1.000",
-                                 "prostate_calcification": "WATER_1.000"}
+EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
+                                 "vessie": "URINARY_BLADDER_EMPTY",
+                                 "rectum": "AIR_TG43",
+                                 "uretre": "URETHRA_WW86",
+                                 "Bladder Neck": "URINARY_BLADDER_EMPTY",
+                                 "prostate_calcification": "CALCIFICATION_ICRU46"}
+# EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "WATER_1.000",
+#                                  "vessie": "WATER_1.000",
+#                                  "rectum": "WATER_1.000",
+#                                  "uretre": "WATER_1.000",
+#                                  "Bladder Neck": "WATER_1.000",
+#                                  "prostate_calcification": "WATER_1.000"}
 
 # ["prostate", "vessie", "rectum", "uretre", "prostate_calcification"]
 if __name__ == "__main__":
-    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "rectum", "uretre"], False, 1e7)
+    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "rectum", "uretre"], False, 1e5)
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
     extractor_selected = "permanent_implant_brachy"
-    input_file_generator_selected = "egs_brachy_permanent_implant_brachy"
-    runner_selected = "egs_brachy"
-    output_file_format = "a3ddose"
+    input_file_generator_selected = "topas_permanent_implant_brachy"
+    runner_selected = "topas"
+    output_file_format = "binary"
     generate_sr = True
     recreate_struct = True
-    reproduce_tg43_dose_grid = False
+    reproduce_tg43_dose_grid = False  # Set to true only for egs_brachy
+    custom_grid = {"scorer_origin": np.asarray([3.08, 122.68, -731]), "pixel_spacing": np.asarray([1, 1, 1]),
+                   "shape": np.asarray([100, 100, 100])}
+    set_custom_grid_based_on_organ_location = True, "prostate"
     ct_calibration_curve = np.asarray([[-3025, 0.001],
                                        [-1000, 0.001],
                                        [0, 1.008],
@@ -56,12 +59,12 @@ if __name__ == "__main__":
                                        [20000, 10.000],
                                        [25000, 10.000]])
     series_description = "MCTG43CT_dose_recalculation"
-    dicom_extractor = DicomExtractors(segmentation=[], build_structures=True,
+    dicom_extractor = DicomExtractors(segmentation=["prostate_calcifications"], build_structures=True,
                                       recreate_struct=recreate_struct, series_description=series_description)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
-                                               run_mode="superposition",
+                                               run_mode="normal",
                                                list_of_desired_structures=ORGANS_TO_USE,
-                                               material_attribution_dict=EGS_BRACHY_MATERIAL_CONVERTER,
+                                               material_attribution_dict=TOPAS_MATERIAL_CONVERTER,
                                                egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy',
                                                batches=1,
                                                chunk=1,
@@ -69,11 +72,11 @@ if __name__ == "__main__":
                                                generate_sr=generate_sr,
                                                crop=True,
                                                expand_tg45_phantom=500,
-                                               code_version="commit 8ffa121f685b8a070d69b781d957bc0208fb608c",
+                                               code_version="3.9",
                                                topas_output_type="binary",
-                                               ct_calibration_curve=ct_calibration_curve
-                                               )
-    simulation_runner = SimulationRunners(nb_treads=12, waiting_time=30,
+                                               ct_calibration_curve=ct_calibration_curve,
+                                               custom_dose_grid=custom_grid)
+    simulation_runner = SimulationRunners(nb_treads=10, waiting_time=30,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(
@@ -109,6 +112,22 @@ if __name__ == "__main__":
                                 format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
                                 datefmt='%H:%M:%S')
             plan = dicom_extractor.extract_context_from_dicoms(extractor_selected, study_path, final_output_folder)
+            if set_custom_grid_based_on_organ_location[0]:
+                center_of_organ = plan.structures.get_specific_mask(set_custom_grid_based_on_organ_location[1],
+                                                                    set_custom_grid_based_on_organ_location[
+                                                                        1]).get_mask_center()
+
+                if custom_grid is None:
+                    ct_shape = plan.structures.get_specific_mask(set_custom_grid_based_on_organ_location[1],
+                                                                 set_custom_grid_based_on_organ_location[
+                                                                     1]).get_3d_mask().shape
+                    input_file_generator.reset_custom_grid({"pixel_spacing": plan.structures.z_y_x_spacing,
+                                                            "shape": ct_shape,
+                                                            "scorer_origin": center_of_organ})
+                else:
+                    custom_grid["scorer_origin"] = center_of_organ
+                    input_file_generator.reset_custom_grid(custom_grid)
+
             try:
                 sim_files_folder, meta_data_dict, all_sr_sequence = input_file_generator.generate_input_files(
                     input_file_generator_selected,
@@ -145,6 +164,10 @@ if __name__ == "__main__":
                                                             to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
                                                             log_file=log_file, flipped=flipped)
             # shutil.rmtree(simulation_files_path)
+
+
+
+
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
