@@ -19,17 +19,16 @@ RUN chmod ugo+x -R /workflow &&\
     mkdir /patients
 
 RUN rm /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
-    mv ./material.dat /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
+    mv ./egs_brachy_swapping_files/material.dat /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
     chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat &&\
-    mv ./Prospera_Med3631_wrapped.geom /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Prospera_Med3631/Prospera_Med3631_wrapped.geom &&\
+    mv ./egs_brachy_swapping_files/Prospera_Med3631_wrapped.geom /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Prospera_Med3631/Prospera_Med3631_wrapped.geom &&\
     chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Prospera_Med3631/Prospera_Med3631_wrapped.geom &&\
-    mv ./Advantage_IAI_125A_wrapped.geom /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Advantage_IAI_125A/Advantage_IAI_125A_wrapped.geom &&\
+    mv ./egs_brachy_swapping_files/Advantage_IAI_125A_wrapped.geom /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Advantage_IAI_125A/Advantage_IAI_125A_wrapped.geom &&\
     chmod +x /EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/I125_LDR/Advantage_IAI_125A/Advantage_IAI_125A_wrapped.geom
 
 RUN apt-get update -y
 
 RUN apt install -y git &&\
-    git config --global url."https://${GIT_USER}:${GIT_PASS}@gitlab.chudequebec.ca".insteadOf "https://gitlab.chudequebec.ca"&&\
     apt install -y python3.8-venv &&\
     python3 -m venv venv &&\
     ./venv/bin/pip install -U -r ./requirements.txt

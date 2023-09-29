@@ -1,7 +1,21 @@
-import getopt
+# Copyright (C) 2023 Samuel Ouellet and Luc Beaulieu
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
 import logging.config
 import os
-import shutil
 import sys
 import numpy as np
 from dicom_rt_context_extractor.utils.dicom_folder_structurer import restructure_dicom_folder, destructure_folder
@@ -9,7 +23,6 @@ from components.simulation_runners import SimulationRunners
 from components.output_cleaners import OutputCleaners
 from components.input_file_generators import InputFileGenerators
 from components.extractors import DicomExtractors
-from root import ROOT
 
 TOPAS_MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
                             "vessie": "TG186MeanMaleSoftTissue",
@@ -43,8 +56,8 @@ if __name__ == "__main__":
     generate_sr = True
     recreate_struct = True
     reproduce_tg43_dose_grid = False  # Set to true only for egs_brachy
-    custom_grid = {"scorer_origin": np.asarray([3.08, 122.68, -731]), "pixel_spacing": np.asarray([1, 1, 1]),
-                   "shape": np.asarray([100, 100, 100])}
+    custom_grid = {"scorer_origin": np.asarray([0, 0, 0]), "pixel_spacing": np.asarray([1, 1, 1]),
+                   "shape": np.asarray([128, 160, 128])}
     set_custom_grid_based_on_organ_location = True, "prostate"
     ct_calibration_curve = np.asarray([[-3025, 0.001],
                                        [-1000, 0.001],
@@ -58,7 +71,7 @@ if __name__ == "__main__":
                                        [10000, 7.365],
                                        [20000, 10.000],
                                        [25000, 10.000]])
-    series_description = "MCTG43CT_dose_recalculation"
+    series_description = "DL_LDR_Brachy_with_calc_training_dataset_1e5"
     dicom_extractor = DicomExtractors(segmentation=["prostate_calcifications"], build_structures=True,
                                       recreate_struct=recreate_struct, series_description=series_description)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
@@ -76,11 +89,11 @@ if __name__ == "__main__":
                                                topas_output_type="binary",
                                                ct_calibration_curve=ct_calibration_curve,
                                                custom_dose_grid=custom_grid)
-    simulation_runner = SimulationRunners(nb_treads=10, waiting_time=30,
+    simulation_runner = SimulationRunners(nb_treads=-1, waiting_time=30,
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(
-        software="Systematic MC recalculation Workflow V0.4: MCTG43 commit: a6103b959926e2c280b3d3870fc0eefab71de342",
+        software="Systematic MC recalculation Workflow V0.5: DL training commit: ***",
         dose_summation_type="PLAN",
         patient_orientation="",
         bits_allocated=16,

@@ -1,3 +1,19 @@
+# Copyright (C) 2023 Samuel Ouellet and Luc Beaulieu
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
 import os
 from typing import Tuple
 
@@ -46,10 +62,6 @@ class InputFileGenerators:
             generate_sr = self.__getattribute__("generate_sr")
         else:
             generate_sr = False
-        if hasattr(self, "crop"):
-            crop = self.__getattribute__("crop")
-        else:
-            crop = False
         if hasattr(self, "code_version"):
             code_version = self.__getattribute__("code_version")
         else:
@@ -117,6 +129,7 @@ class InputFileGenerators:
                                                          muen_path,
                                                          add=frequence_of_print + add,
                                                          crop=crop, custom_dose_grid=custom_dose_grid,
+                                                                          generate_sr=generate_sr,
                                                                           code_version=code_version)
 
         return output_folder, meta_data_dict, all_sr_sequence
