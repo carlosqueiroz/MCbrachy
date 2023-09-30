@@ -1,9 +1,8 @@
-grpm-uid @ git+https://gitlab.chudequebec.ca/sam23/grpm_uid.git
 dicom_rt_context_extractor @ git+https://gitlab.chudequebec.ca/sam23/dicom_rt_context_extractor.git
 mcdose2dicom @ git+https://gitlab.chudequebec.ca/sam23/mcdose2dicom.git
 dicom-sr-builder @ git+https://gitlab.chudequebec.ca/sam23/dicom-sr-builder.git
 prostate-calcification-segmentation @ git+https://gitlab.chudequebec.ca/sam23/prostatecalcificationsegmentation.git
-topas-file-generator @ git+https://gitlab.chudequebec.ca/sam23/topasfilegenerator.git@phsp_sources
+topas-file-generator @ git+https://gitlab.chudequebec.ca/sam23/topasfilegenerator.git
 egs-brachy-file-generator @ git+https://gitlab.chudequebec.ca/sam23/egs_brachy_file_generator.git
 py3ddose @ git+https://github.com/smichi23/py3ddose.git
 topas2numpy~=0.2.0

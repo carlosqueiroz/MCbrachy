@@ -1,8 +1,5 @@
 FROM saoue66/topas:0.2
 
-ARG GIT_USER
-ARG GIT_PASS
-
 ENV EGS_HOME="/EGSnrc_CLRP/egs_home/"
 ENV EGS_CONFIG="/EGSnrc_CLRP/HEN_HOUSE/specs/linux.conf"
 ENV EGS_BATCH_SYSTEM="at"

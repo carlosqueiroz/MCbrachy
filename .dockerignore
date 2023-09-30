@@ -102,3 +102,4 @@ cmake-build-*/
 /venv
 /simulation_files/**
 !/simulation_files/Muen.dat
+/docker_files/**

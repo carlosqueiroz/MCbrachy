@@ -47,18 +47,23 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
 # ["prostate", "vessie", "rectum", "uretre", "prostate_calcification"]
 if __name__ == "__main__":
     ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "rectum", "uretre"], False, 1e5)
+    #-------------------- input, output --------------------
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
+    #-------------------- Selecting component types --------------------
     extractor_selected = "permanent_implant_brachy"
     input_file_generator_selected = "topas_permanent_implant_brachy"
     runner_selected = "topas"
     output_file_format = "binary"
+    #-------------------- Additional DICOM files --------------------
     generate_sr = True
-    recreate_struct = True
+    recreate_struct_with_simulation_geometry = True
+
+    #-------------------- Simulation setup parameters --------------------
     reproduce_tg43_dose_grid = False  # Set to true only for egs_brachy
     custom_grid = {"scorer_origin": np.asarray([0, 0, 0]), "pixel_spacing": np.asarray([1, 1, 1]),
-                   "shape": np.asarray([128, 160, 128])}
-    set_custom_grid_based_on_organ_location = True, "prostate"
+                   "shape": np.asarray([128, 160, 128])} # only for TOPAS
+    set_custom_grid_based_on_organ_location = True, "prostate" # only for TOPAS
     ct_calibration_curve = np.asarray([[-3025, 0.001],
                                        [-1000, 0.001],
                                        [0, 1.008],
@@ -71,34 +76,36 @@ if __name__ == "__main__":
                                        [10000, 7.365],
                                        [20000, 10.000],
                                        [25000, 10.000]])
-    series_description = "DL_LDR_Brachy_with_calc_training_dataset_1e5"
+
+    series_description = "Test_series_description"
+    #-------------------- Building components with their parameter--------------------
     dicom_extractor = DicomExtractors(segmentation=["prostate_calcifications"], build_structures=True,
-                                      recreate_struct=recreate_struct, series_description=series_description)
+                                      recreate_struct=recreate_struct_with_simulation_geometry, series_description=series_description)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
-                                               run_mode="normal",
+                                               run_mode="normal", # EGS_BRACHY ONLY "normal" for TG186 and "superposition" for TG43
                                                list_of_desired_structures=ORGANS_TO_USE,
-                                               material_attribution_dict=TOPAS_MATERIAL_CONVERTER,
-                                               egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy',
+                                               material_attribution_dict=TOPAS_MATERIAL_CONVERTER, #Set Material to use here
+                                               egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy',#EGS_BRACHY ONLY path to egs_brachy folder
                                                batches=1,
                                                chunk=1,
                                                add="",
                                                generate_sr=generate_sr,
-                                               crop=True,
+                                               crop=True, # Weither to crop CT to structures or not
                                                expand_tg45_phantom=500,
                                                code_version="3.9",
                                                topas_output_type="binary",
                                                ct_calibration_curve=ct_calibration_curve,
                                                custom_dose_grid=custom_grid)
-    simulation_runner = SimulationRunners(nb_treads=-1, waiting_time=30,
+    simulation_runner = SimulationRunners(nb_treads=-1, waiting_time=30, #See egsNRC documentation for more details on parrallelization runs
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(
         software="Systematic MC recalculation Workflow V0.5: DL training commit: ***",
         dose_summation_type="PLAN",
         patient_orientation="",
-        bits_allocated=16,
+        bits_allocated=16, # Resolution of dosegrid values
         series_description=series_description,
-        generate_dvh=True,
+        generate_dvh=True, # Whether to generate DVH or not
         generate_sr=generate_sr,
         dvh_calculate_full_volume=False,
         dvh_use_structure_extents=False,
@@ -107,8 +114,10 @@ if __name__ == "__main__":
         dvh_interpolation_segments=2,
         dvh_dose_limit=60000,
         prescription_dose=144,
-        use_updated_rt_struct=True)
+        use_updated_rt_struct=True) # Whether to use updated RT struct or not
 
+
+    #-------------------- Running the pipeline--------------------
     for patient in os.listdir(PATIENTS_DIRECTORY):
         patient_folder_path = os.path.join(PATIENTS_DIRECTORY, patient)
         if RESTRUCTURING_FOLDERS:
@@ -176,11 +185,7 @@ if __name__ == "__main__":
                                                             image_orientation_patient=image_orientation_patient,
                                                             to_dose_factor=to_dose_factor, sr_item_list=all_sr_sequence,
                                                             log_file=log_file, flipped=flipped)
-            # shutil.rmtree(simulation_files_path)
-
-
-
-
+            # shutil.rmtree(simulation_files_path) # Uncomment to delete simulation files after processing
 
         if RESTRUCTURING_FOLDERS:
             destructure_folder(patient_folder_path)
