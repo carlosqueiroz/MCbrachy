@@ -119,6 +119,10 @@ class InputFileGenerators:
             custom_dose_grid = self.__getattribute__("custom_dose_grid")
         else:
             custom_dose_grid = None
+        if hasattr(self, "crop_to_contour_margin"):
+            crop_margin = self.__getattribute__("crop_to_contour_margin")
+        else:
+            crop_margin = 0
         meta_data_dict, all_sr_sequence = generate_whole_topas_input_file(plan, int(total_particles),
                                                          list_of_desired_structures,
                                                          material_attribution_dict,
@@ -128,7 +132,8 @@ class InputFileGenerators:
                                                          topas_output_type,
                                                          muen_path,
                                                          add=frequence_of_print + add,
-                                                         crop=crop, custom_dose_grid=custom_dose_grid,
+                                                         crop=crop, crop_margin=crop_margin,
+                                                                          custom_dose_grid=custom_dose_grid,
                                                                           generate_sr=generate_sr,
                                                                           code_version=code_version)
 
@@ -177,6 +182,10 @@ class InputFileGenerators:
             run_mode = self.__getattribute__("run_mode")
         else:
             run_mode = "normal"
+        if hasattr(self, "crop_to_contour_margin"):
+            crop_margin = self.__getattribute__("crop_to_contour_margin")
+        else:
+            crop_margin = 0
 
         meta_data_dict, all_sr_sequence = generate_whole_egs_brachy_input_file(plan, total_particles,
                                                                                list_of_desired_structures,
@@ -185,7 +194,8 @@ class InputFileGenerators:
                                                                                path_to_save_input_file,
                                                                                egs_brachy_home, egs_phant_file_path,
                                                                                run_mode, batches, chunk, add,
-                                                                               generate_sr, crop, ct_calibration_curve,
+                                                                               generate_sr, crop,crop_margin,
+                                                                               ct_calibration_curve,
                                                                                code_version)
 
         return output_folder, meta_data_dict, all_sr_sequence

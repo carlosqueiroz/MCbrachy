@@ -79,11 +79,13 @@ if __name__ == "__main__":
 
     series_description = "Test_series_description"
     #-------------------- Building components with their parameter--------------------
+    # even if some parameters are not needed in some cases, they are left to serve as reference
     dicom_extractor = DicomExtractors(segmentation=["prostate_calcifications"], build_structures=True,
                                       recreate_struct=recreate_struct_with_simulation_geometry, series_description=series_description)
     input_file_generator = InputFileGenerators(total_particles=NUMBER_OF_PARTICLES,
                                                run_mode="normal", # EGS_BRACHY ONLY "normal" for TG186 and "superposition" for TG43
                                                list_of_desired_structures=ORGANS_TO_USE,
+                                               crop_to_contour_margin=20, # Margin to add to the contour when cropping in mm
                                                material_attribution_dict=TOPAS_MATERIAL_CONVERTER, #Set Material to use here
                                                egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy',#EGS_BRACHY ONLY path to egs_brachy folder
                                                batches=1,
