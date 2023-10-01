@@ -29,7 +29,7 @@ TOPAS_MATERIAL_CONVERTER = {"prostate": "TG186Prostate",
                             "rectum": "ICRPRectum",
                             "uretre": "TG186MeanMaleSoftTissue",
                             "Bladder Neck": "TG186MeanMaleSoftTissue",
-                            "calcification": "CALCIFICATION_ICRU46"}
+                            "prostate_calcification": "CALCIFICATION_ICRU46"}
 
 EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
                                  "vessie": "URINARY_BLADDER_EMPTY",
@@ -46,7 +46,7 @@ EGS_BRACHY_MATERIAL_CONVERTER = {"prostate": "PROSTATE_WW86",
 
 # ["prostate", "vessie", "rectum", "uretre", "prostate_calcification"]
 if __name__ == "__main__":
-    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "rectum", "uretre"], False, 1e5)
+    ORGANS_TO_USE, RESTRUCTURING_FOLDERS, NUMBER_OF_PARTICLES = (["prostate", "vessie", "rectum", "uretre", "prostate_calcification"], False, 1e5)
     #-------------------- input, output --------------------
     PATIENTS_DIRECTORY = sys.argv[-2]
     OUTPUT_PATH = sys.argv[-1]
@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
     #-------------------- Simulation setup parameters --------------------
     reproduce_tg43_dose_grid = False  # Set to true only for egs_brachy
-    custom_grid = {"scorer_origin": np.asarray([0, 0, 0]), "pixel_spacing": np.asarray([1, 1, 1]),
-                   "shape": np.asarray([128, 160, 128])} # only for TOPAS
+    custom_grid = {"scorer_origin": np.asarray([0, 0, 0]), "pixel_spacing": np.asarray([0.75, 0.5, 1]),
+                   "shape": np.asarray([130, 160, 128])}  # only for TOPAS
     set_custom_grid_based_on_organ_location = True, "prostate" # only for TOPAS
     ct_calibration_curve = np.asarray([[-3025, 0.001],
                                        [-1000, 0.001],
@@ -98,7 +98,9 @@ if __name__ == "__main__":
                                                topas_output_type="binary",
                                                ct_calibration_curve=ct_calibration_curve,
                                                custom_dose_grid=custom_grid)
-    simulation_runner = SimulationRunners(nb_treads=-1, waiting_time=30, #See egsNRC documentation for more details on parrallelization runs
+
+    nb_of_threads = 2
+    simulation_runner = SimulationRunners(nb_treads=nb_threads, waiting_time=30, #See egsNRC documentation for more details on parrallelization runs
                                           egs_brachy_home=r'/EGSnrc_CLRP/egs_home/egs_brachy')
 
     output_cleaner = OutputCleaners(
@@ -178,6 +180,8 @@ if __name__ == "__main__":
             to_dose_factor = plan.dose_factor
             if "dose_factor_offset" in meta_data_dict.keys():
                 to_dose_factor = to_dose_factor * meta_data_dict["dose_factor_offset"]
+                if "topas" == runner_selected:
+                    to_dose_factor = to_dose_factor / (NUMBER_OF_PARTICLES * nb_of_threads)
             flipped = False
             if "flipped" in meta_data_dict.keys():
                 flipped = "flipped"

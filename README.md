@@ -11,6 +11,8 @@ The pipeline is designed to be used with Docker images, but can also be used wit
 The pipeline can be used with TOPAS and egs_brachy, but can be  adapted to other Monte Carlo codes. Finally, simulations
 based on the TG43 and TG186 formalism of LDR brachytherapy are supported for both TOPAS and egs_brachy.
 
+**NOTICE : This pipeline comes with no warranty. It is the user's responsibility to validate the results obtained with this pipeline.
+PLEASE DO NOT USE LIKE A BLACK BOX.**
 
 ## License
 
