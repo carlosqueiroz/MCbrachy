@@ -199,7 +199,7 @@ For more information about Systematic_MC_dose_recalculation please contact:
 
 Citations of DICOM_RT_context_extractor use the following reference:
 
-Citation to come...
+Ouellet, S. et al. A Monte Carlo dose recalculation pipeline for durable datasets: an I-125 LDR prostate brachytherapy use case.   Physics in Medicine & Biology 68, 235001 (2023).
 
 ## Reporting Bugs
 
